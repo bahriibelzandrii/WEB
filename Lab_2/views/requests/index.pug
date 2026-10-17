@@ -1,0 +1,65 @@
+extends ../layout
+
+include ../partials/pagination
+
+block title
+  title Заявки — Сервіс ремонту техніки
+
+block content
+  .page-head
+    h1 Заявки
+
+  form.filters(method="get", action="/requests")
+    .field
+      label Статус
+      select(name="status")
+        option(value="") Всі статуси
+        each s in statuses
+          option(value=s, selected=(status === s))= statusLabels[s]
+    .field
+      label Тип
+      select(name="type")
+        option(value="") Всі типи
+        each t in types
+          option(value=t, selected=(type === t))= typeLabels[t]
+    .field
+      label Пріоритет
+      select(name="priority")
+        option(value="") Будь-який
+        each p in priorities
+          option(value=p, selected=(priority === p))= priorityLabels[p]
+    .field
+      label Пошук
+      input(type="search", name="q", placeholder="Номер, опис, клієнт", value=(q || ""))
+    button.btn(type="submit") Застосувати
+
+  table.table
+    thead
+      tr
+        th Номер
+        th Клієнт
+        th Пристрій
+        th Тип
+        th Пріоритет
+        th Статус
+        th Дата
+    tbody
+      each r in items
+        tr
+          td
+            a(href=`/requests/${r.id}`)= r.number
+          td= r.client.name
+          td= r.device.brand + " " + r.device.model
+          td= typeLabels[r.type]
+          td
+            .badge(class="badge-priority-" + r.priority.toLowerCase())= priorityLabels[r.priority]
+          td
+            .badge(class="badge-status-" + r.status.toLowerCase())= statusLabels[r.status]
+          td= dateOnly(r.createdAt)
+      if items.length === 0
+        tr
+          td(colspan=7).empty
+            | Нічого не знайдено
+            a(href="/requests") Скинути фільтри
+
+  +pagination(page, totalPages, base, pageNumbers, shownFrom, shownTo, total)

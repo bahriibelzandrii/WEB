@@ -1,0 +1,213 @@
+extends ../layout
+
+block title
+  title= r.number + " — Сервіс ремонту техніки"
+
+mixin section(title)
+  section.block
+    h2= title
+    block
+
+block content
+  .page-head
+    h1= r.number
+    .badges
+      .badge(class="badge-status-" + r.status.toLowerCase())= statusLabels[r.status]
+      .badge= typeLabels[r.type]
+      .badge(class="badge-priority-" + r.priority.toLowerCase())= priorityLabels[r.priority]
+    .meta
+      span Створено: #{dateTime(r.createdAt)}
+      span Менеджер: #{r.createdBy.name}
+      span Майстер: #{r.assignedTo ? r.assignedTo.name : "не призначено"}
+
+  +section("Клієнт")
+    p
+      strong= r.client.name
+      |  ·  #{r.client.phone}
+      if r.client.email
+        |  ·  #{r.client.email}
+      if r.client.address
+        |  ·  #{r.client.address}
+    p
+      a(href="/clients/" + r.client.id) Картка клієнта →
+
+  +section("Пристрій")
+    p
+      strong= r.device.brand + " " + r.device.model
+      |  ·  #{deviceTypeLabels[r.device.type]}
+      if r.device.serialNumber
+        |  ·  серійний № #{r.device.serialNumber}
+      if r.device.purchasedAt
+        |  ·  куплений: #{dateOnly(r.device.purchasedAt)}
+    if r.device.specs
+      p.specs= r.device.specs
+    p
+      a(href="/devices/" + r.device.id) Картка пристрою →
+
+  +section("Опис")
+    p.description= r.description
+
+  if r.originalRequest
+    +section("Гарантійне посилання")
+    p
+      | Оригінальний ремонт:
+      a(href="/requests/" + r.originalRequest.id)= r.originalRequest.number
+      |  ·  статус: #{statusLabels[r.originalRequest.status]}
+      |  ·  клієнт: #{r.originalRequest.client.name}
+
+  +section("Діагностика")
+    if r.diagnostics
+      table.table
+        tbody
+          tr
+            th Дата
+            td= dateOnly(r.diagnostics.date)
+          tr
+            th Майстер
+            td= r.diagnostics.technician ? r.diagnostics.technician.name : "—"
+          tr
+            th Висновки
+            td= r.diagnostics.findings
+          tr
+            th Вартість
+            td.num= uah(r.diagnostics.cost)
+          if r.diagnostics.notes
+            tr
+              th Примітка
+              td= r.diagnostics.notes
+    else
+      p.empty-text Діагностика ще не проведена
+
+  +section("Роботи")
+    if r.works.length > 0
+      table.table
+        thead
+          tr
+            th Робота
+            th.num Години
+            th Майстер
+            th Статус
+            th.num Сума
+        tbody
+          each w in r.works
+            tr
+              td= w.name
+              td.num= w.hours
+              td= w.technician ? w.technician.name : "—"
+              td= workStatusLabels[w.status]
+              td.num= uah(w.cost)
+      p.total Разом за роботи: #{uah(r.works.reduce((s, w) => s + Number(w.cost), 0))}
+    else
+      p.empty-text Роботи ще не додані
+
+  +section("Запчастини")
+    if r.parts.length > 0
+      table.table
+        thead
+          tr
+            th Запчастина
+            th SKU
+            th.num К-сть
+            th.num Ціна
+            th.num Сума
+        tbody
+          each p in r.parts
+            tr
+              td= p.part.name
+              td= p.part.sku || "—"
+              td.num= p.quantity
+              td.num= uah(p.unitPrice)
+              td.num= uah(p.quantity * Number(p.unitPrice))
+      p.total Разом за запчастини: #{uah(r.parts.reduce((s, p) => s + p.quantity * Number(p.unitPrice), 0))}
+    else
+      p.empty-text Запчастини ще не додані
+
+  +section("Оцінка")
+    if r.estimate
+      .badges
+        .badge= estimateStatusLabels[r.estimate.status]
+      p
+        | Роботи: #{uah(r.estimate.totalWorks)}
+        |  ·  Запчастини: #{uah(r.estimate.totalParts)}
+        |  ·  Разом: #{uah(r.estimate.total)}
+      p.meta
+        | Створив: #{r.estimate.createdBy ? r.estimate.createdBy.name : "—"}
+        |  ·  #{dateTime(r.estimate.createdAt)}
+        if r.estimate.approvedAt
+          |  ·  Затверджено: #{dateTime(r.estimate.approvedAt)}
+    else
+      p.empty-text Оцінки ще немає
+
+  +section("Рахунок")
+    if r.invoice
+      .badges
+        .badge= invoiceStatusLabels[r.invoice.status]
+      p
+        | Сума: #{uah(r.invoice.total)}
+        |  ·  Знижка: #{uah(r.invoice.discount)}
+        |  ·  До сплати: #{uah(r.invoice.finalTotal)}
+      p.meta
+        | Видано: #{dateOnly(r.invoice.issueDate)}
+        if r.invoice.dueDate
+          |  ·  Термін сплати: #{dateOnly(r.invoice.dueDate)}
+      if r.invoice.payments.length > 0
+        table.table
+          thead
+            tr
+              th Дата
+              th Спосіб
+              th.num Сума
+              th Примітка
+          tbody
+            each pay in r.invoice.payments
+              tr
+                td= dateTime(pay.paidAt)
+                td= paymentMethodLabels[pay.method]
+                td.num= uah(pay.amount)
+                td= pay.note || "—"
+      p.total Оплачено: #{uah(r.invoice.payments.reduce((s, p) => s + Number(p.amount), 0))}
+    else
+      p.empty-text Рахунку ще немає
+
+  +section("Гарантія")
+    if r.warranty
+      p
+        | Термін: #{r.warranty.periodDays} днів
+        |  ·  з #{dateOnly(r.warranty.startDate)}
+        |  ·  до #{dateOnly(r.warranty.endDate)}
+      if r.warranty.scope
+        p.scope= r.warranty.scope
+    else
+      p.empty-text Гарантія ще не оформлена
+
+  +section("Коментарі")
+    if r.comments.length > 0
+      each c in r.comments
+        .comment
+          .comment-meta
+            strong= c.author.name
+            |  #{dateTime(c.createdAt)}
+            if c.isInternal
+              .badge.badge-internal внутрішній
+          p= c.text
+    else
+      p.empty-text Коментарів немає
+
+  +section("Вкладення")
+    if r.attachments.length > 0
+      table.table
+        thead
+          tr
+            th Файл
+            th.num Розмір
+            th Тип
+            th Завантажив
+        tbody
+          each a in r.attachments
+            tr
+              td= a.fileName
+              td.num= bytes(a.size)
+              td= a.mimeType || "—"
+              td= a.uploadedBy.name
+    else
+      p.empty-text Вкладень немає

@@ -1,0 +1,14 @@
+doctype html
+html(lang="uk")
+  head
+    meta(charset="utf-8")
+    meta(name="viewport", content="width=device-width, initial-scale=1")
+    block title
+      title Сервіс ремонту та обслуговування комп'ютерної техніки
+    link(rel="stylesheet", href="/css/style.css")
+  body
+    include partials/header
+    main.container
+      include partials/flash
+      block content
+    include partials/footer

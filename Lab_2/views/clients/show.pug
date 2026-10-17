@@ -1,0 +1,68 @@
+extends ../layout
+
+block title
+  title= c.name + " — Сервіс ремонту техніки"
+
+block content
+  .page-head
+    h1= c.name
+    .meta
+      span= c.phone
+      if c.email
+        span= c.email
+      if c.address
+        span= c.address
+    .page-actions
+      a.btn(href="/clients") ← Назад
+
+  if c.notes
+    .block
+      h2 Примітки
+      p= c.notes
+
+  .block
+    h2 Пристрої (#{c.devices.length})
+    if c.devices.length > 0
+      table.table
+        thead
+          tr
+            th Бренд / модель
+            th Тип
+            th Серійний №
+            th.num Заявки
+        tbody
+          each d in c.devices
+            tr
+              td
+                a(href="/devices/" + d.id)= d.brand + " " + d.model
+              td= deviceTypeLabels[d.type]
+              td= d.serialNumber || "—"
+              td.num= d._count.requests
+    else
+      p.empty-text Пристроїв немає
+
+  .block
+    h2 Історія заявок (#{c.requests.length})
+    if c.requests.length > 0
+      table.table
+        thead
+          tr
+            th Номер
+            th Пристрій
+            th Тип
+            th Пріоритет
+            th Статус
+            th Дата
+        tbody
+          each r in c.requests
+            tr
+              td
+                a(href="/requests/" + r.id)= r.number
+              td= r.device.brand + " " + r.device.model
+              td= typeLabels[r.type]
+              td= priorityLabels[r.priority]
+              td
+                .badge(class="badge-status-" + r.status.toLowerCase())= statusLabels[r.status]
+              td= dateOnly(r.createdAt)
+    else
+      p.empty-text Заявок немає
