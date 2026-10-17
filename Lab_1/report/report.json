@@ -1,0 +1,62 @@
+{
+  "meta": {
+    "course_code": "ВЕБ",
+    "course_name": "Вебтехнології",
+    "lab_number": 1,
+    "topic": "Модель даних сервісу ремонту та обслуговування комп'ютерної техніки",
+    "author": "Багрія-Белз Андрій",
+    "group": "КН-2327Б",
+    "variant": null,
+    "objective": "Спроєктувати та реалізувати реляційну модель даних для сервісу ремонту та обслуговування комп'ютерної техніки з використанням Prisma ORM та PostgreSQL.",
+    "title_word": "ЗВІТ",
+    "title_style": "standard"
+  },
+  "body": [
+    { "type": "task", "number": 1, "text": "Спроєктувати реляційну модель даних: визначити сутності, атрибути, зв'язки та статусну машину обробки заявки." },
+    { "type": "images", "images": [
+      "C:/Programing/University/WEB/Lab_1/report/assets/er.png",
+      "C:/Programing/University/WEB/Lab_1/report/assets/status.png"
+    ] },
+    { "type": "text", "text": "Модель містить 15 сутностей і 9 enum-типів. Центральна сутність — Request (заявка): вона пов'язує клієнта, прилад, діагностику, оцінку, рахунок, гарантію, коментарі та вкладення. Статус заявки рухається лише «вперед» по ланцюгу NEW → IN_DIAGNOSTICS → ESTIMATE_READY → IN_REPAIR → READY → COMPLETED; стан CANCELED доступний з будь-якого некінцевого стану." },
+    { "type": "task", "number": 2, "text": "Реалізувати модель у PostgreSQL та наситити базу демонстраційними даними." },
+    { "type": "images", "images": [
+      "C:/Programing/University/WEB/Lab_1/report/assets/studio_request.png",
+      "C:/Programing/University/WEB/Lab_1/report/assets/studio_client.png",
+      "C:/Programing/University/WEB/Lab_1/report/assets/studio_device.png",
+      "C:/Programing/University/WEB/Lab_1/report/assets/studio_user.png"
+    ] },
+    { "type": "text", "text": "Застосовано міграції Prisma: у базі створено 15 таблиць. Демонстраційний набір: 60 заявок (усі 7 статусів, 3 типи, 4 пріоритети), 30 клієнтів, 45 приладів, 4 співробітники. На скріншотах — таблиці Request, Client, Device та User у Prisma Studio." },
+    { "type": "task", "number": 3, "text": "Змодельувати грошовий ланцюжок: оцінка, рахунок, платежі та гарантія." },
+    { "type": "images", "images": [
+      "C:/Programing/University/WEB/Lab_1/report/assets/money.png",
+      "C:/Programing/University/WEB/Lab_1/report/assets/studio_estimate.png",
+      "C:/Programing/University/WEB/Lab_1/report/assets/studio_invoice.png",
+      "C:/Programing/University/WEB/Lab_1/report/assets/studio_payment.png",
+      "C:/Programing/University/WEB/Lab_1/report/assets/studio_warranty.png"
+    ] },
+    { "type": "text", "text": "Грошова ланцюжка: Estimate (total = totalWorks + totalParts) → Invoice (finalTotal = total − discount) → Payment (сума платежів ≤ finalTotal, статуси UNPAID / PARTIAL / PAID). У демонстраційних даних: 43 оцінки, 37 рахунків, 30 платежів, 22 гарантії на завершених заявках." },
+    { "type": "task", "number": 4, "text": "Змодельувати каталог робіт та запчастин із фіксацією цін на момент заявки." },
+    { "type": "images", "images": [
+      "C:/Programing/University/WEB/Lab_1/report/assets/studio_workcatalog.png",
+      "C:/Programing/University/WEB/Lab_1/report/assets/studio_part.png",
+      "C:/Programing/University/WEB/Lab_1/report/assets/studio_requestwork.png",
+      "C:/Programing/University/WEB/Lab_1/report/assets/studio_requestpart.png",
+      "C:/Programing/University/WEB/Lab_1/report/assets/studio_diagnostics.png"
+    ] },
+    { "type": "text", "text": "Каталог містить 14 видів робіт та 15 запчастин. У заявках ціни фіксуються як снапшот (RequestWork.cost, RequestPart.unitPrice), тому зміни прайсу не переписують історію. Діагностика створюється для 49 заявок." },
+    { "type": "task", "number": 5, "text": "Змодельувати комунікацію та вкладення файлів до заявок." },
+    { "type": "images", "images": [
+      "C:/Programing/University/WEB/Lab_1/report/assets/studio_comment.png",
+      "C:/Programing/University/WEB/Lab_1/report/assets/studio_fileattachment.png"
+    ] },
+    { "type": "text", "text": "До заявок додаються коментарі (68, внутрішні та клієнтські) та метадані вкладених файлів (21: фото дефектів, акти приймання-передачі)." },
+    { "type": "task", "number": 6, "text": "Запустити застосування та перевірити його роботу." },
+    { "type": "images", "images": [
+      "C:/Programing/University/WEB/Lab_1/report/assets/arch.png",
+      "C:/Programing/University/WEB/Lab_1/report/assets/health.png"
+    ] },
+    { "type": "text", "text": "Застосування: Express 5 на Node.js 24 з Prisma ORM 7 та PostgreSQL 18 (Docker, порт 5433). Health-чек GET http://localhost:3000/health повертає HTTP 200 зі статусом ok і db: up — база доступна." }
+  ],
+  "conclusion": "На цій лабораторній роботі я ознайомився з проєктуванням реляційної моделі даних для сервісу ремонту комп'ютерної техніки та навчився реалізовувати її за допомогою Prisma ORM і PostgreSQL: описати 15 сутностей і 9 enum-типів, застосувати міграції, наситити базу демонстраційними даними та перевірити бізнес-інваріанти. Закріпив основи побудови статусної машини заявки та грошового ланцюжка «оцінка — рахунок — платежі».",
+  "output": { "format": "docx" }
+}

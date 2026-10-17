@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<style>
+  body { background: #ffffff; margin: 0; padding: 24px; }
+  .diag { margin: 0 0 48px 0; text-align: center; }
+</style>
+</head>
+<body>
+<div class="diag" id="d-er"><pre class="mermaid">
+erDiagram
+    User ||--o{ Request : "createdBy"
+    User ||--o{ Request : "assignedTo"
+    User ||--o{ RequestWork : "technician"
+    User ||--o{ Diagnostics : "technician"
+    User ||--o{ Estimate : "createdBy"
+    User ||--o{ Comment : "author"
+    User ||--o{ FileAttachment : "uploadedBy"
+    Client ||--o{ Device : "owner"
+    Client ||--o{ Request : "client"
+    Device ||--o{ Request : "device"
+    Request ||--o| Diagnostics : "1-0..1"
+    Request ||--o{ RequestWork : "works"
+    Request ||--o{ RequestPart : "parts"
+    Request ||--o| Estimate : "1-0..1"
+    Request ||--o| Invoice : "1-0..1"
+    Request ||--o| Warranty : "1-0..1"
+    Request ||--o{ Comment : "comments"
+    Request ||--o{ FileAttachment : "attachments"
+    Request |o--o| Request : "originalRequest"
+    WorkCatalog ||--o{ RequestWork : "priced as"
+    Part ||--o{ RequestPart : "used in"
+    Estimate ||--o| Invoice : "issued as"
+    Invoice ||--o{ Payment : "payments"
+</pre></div>
+<div class="diag" id="d-status"><pre class="mermaid">
+stateDiagram-v2
+    direction LR
+    [*] --> NEW
+    NEW --> IN_DIAGNOSTICS : призначено майстра
+    IN_DIAGNOSTICS --> ESTIMATE_READY : створено Diagnostics
+    ESTIMATE_READY --> IN_REPAIR : Estimate APPROVED, видано Invoice
+    IN_REPAIR --> READY : роботи DONE, рахунок сплачено
+    READY --> COMPLETED : створено Warranty
+    NEW --> CANCELED
+    IN_DIAGNOSTICS --> CANCELED
+    ESTIMATE_READY --> CANCELED
+    IN_REPAIR --> CANCELED
+    READY --> CANCELED
+    COMPLETED --> [*]
+    CANCELED --> [*]
+</pre></div>
+<div class="diag" id="d-money"><pre class="mermaid">
+flowchart LR
+    subgraph POS["Позиції заявки"]
+        RW["RequestWork<br/>роботи: cost"]
+        RP["RequestPart<br/>запчастини: quantity x unitPrice"]
+    end
+    RW --> E["Estimate<br/>total = totalWorks + totalParts<br/>DRAFT / APPROVED / REJECTED"]
+    RP --> E
+    E -->|APPROVED| I["Invoice<br/>finalTotal = total - discount"]
+    I --> PAY["Payment<br/>сума платежів <= finalTotal"]
+    PAY --> S1["UNPAID<br/>сума = 0"]
+    PAY --> S2["PARTIAL<br/>0 &lt; сума &lt; finalTotal"]
+    PAY --> S3["PAID<br/>сума >= finalTotal"]
+</pre></div>
+<div class="diag" id="d-arch"><pre class="mermaid">
+flowchart LR
+    B["Клієнт: браузер"] -->|HTTP GET /health| X["Express 5<br/>Node.js 24 + TypeScript"]
+    X --> P["Prisma ORM 7<br/>PrismaClient + @prisma/adapter-pg"]
+    P -->|SQL| PG[("PostgreSQL 18<br/>Docker, localhost:5433")]
+    ST["Prisma Studio<br/>localhost:51212"] --> PG
+</pre></div>
+<script>
+  mermaid.initialize({ startOnLoad: true, theme: "default", securityLevel: "loose" });
+  window.__diagReady = false;
+  window.addEventListener("load", () => { setTimeout(() => { window.__diagReady = true; }, 500); });
+</script>
+</body>
+</html>
