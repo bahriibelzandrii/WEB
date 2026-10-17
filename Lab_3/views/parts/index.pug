@@ -1,0 +1,32 @@
+extends ../layout
+
+block title
+  title Запчастини — Сервіс ремонту техніки
+
+block content
+  .page-head
+    .page-head-top
+      .page-head-title
+        h1 Запчастини
+        p.lead Каталог запчастин
+      a.btn.btn-primary(href="/parts/new") Нова запчастина
+
+  table.table
+    thead
+      tr
+        th Запчастина
+        th SKU
+        th.num Ціна
+        th.act Дії
+    tbody
+      each p in items
+        tr
+          td= p.name
+          td= p.sku || "—"
+          td.num= uah(p.price)
+          td.act
+            a.btn-small.btn(href="/parts/" + p.id + "/edit") Редагувати
+            a.btn-small.btn-danger(href="/parts/" + p.id + "/delete") Видалити
+      if items.length === 0
+        tr
+          td(colspan=4).empty Каталог порожній

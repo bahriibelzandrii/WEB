@@ -1,0 +1,168 @@
+extends ../layout
+
+block title
+  title Нова заявка — Сервіс ремонту техніки
+
+block content
+  h1 Нова заявка
+
+  form(method="post", action="/requests")
+    .form-grid
+      .field
+        label Тип заявки
+        select#type(name="type")
+          option(value="", disabled=(values.type ? false : true)) Оберіть…
+          each t in types
+            option(value=t, selected=(values.type === t))= typeLabels[t]
+      .field
+        label Пріоритет
+        select(name="priority")
+          each p in priorities
+            option(value=p, selected=(values.priority ? values.priority === p : p === "NORMAL"))= priorityLabels[p]
+      .field.field-wide
+        label Опис проблеми / що обслуговати
+        textarea(name="description", rows="4")= values.description || ""
+
+    h3 Клієнт
+    .field
+      label.inline-radio
+        input(type="radio", name="clientMode", value="existing", checked=(values.clientMode !== "new"))
+        |  Існуючий клієнт
+      label.inline-radio
+        input(type="radio", name="clientMode", value="new", checked=(values.clientMode === "new"))
+        |  Новий клієнт
+    #existingClientBlock
+      .field
+        label
+        select#clientId(name="clientId")
+          option(value="") Оберіть клієнта…
+          each c in clients
+            option(value=c.id, selected=(values.clientId === c.id))= c.name + " — " + c.phone
+    #newClientBlock
+      .form-grid
+        .field
+          label Ім'я / назва
+          input(type="text", name="newClientName", value=(values.newClientName || ""))
+        .field
+          label Телефон
+          input(type="text", name="newClientPhone", value=(values.newClientPhone || ""))
+        .field
+          label Email
+          input(type="email", name="newClientEmail", value=(values.newClientEmail || ""))
+        .field
+          label Адреса
+          input(type="text", name="newClientAddress", value=(values.newClientAddress || ""))
+
+    h3 Пристрій
+    .field
+      label.inline-radio#existingDeviceRadioLabel
+        input(type="radio", name="deviceMode", value="existing", checked=(values.deviceMode !== "new"))
+        |  Існуючий пристрій
+      label.inline-radio
+        input(type="radio", name="deviceMode", value="new", checked=(values.deviceMode === "new"))
+        |  Новий пристрій
+    #existingDeviceBlock
+      .field
+        label
+        select#deviceId(name="deviceId")
+          option(value="") Оберіть пристрій…
+          each d in devices
+            option(value=d.id, data-owner=d.owner.id, selected=(values.deviceId === d.id))= d.brand + " " + d.model + " — " + d.owner.name
+    #newDeviceBlock
+      .form-grid
+        .field
+          label Тип
+          select(name="newDeviceType")
+            option(value="") Оберіть…
+            each dt in deviceTypes
+              option(value=dt, selected=(values.newDeviceType === dt))= deviceTypeLabels[dt]
+        .field
+          label Бренд
+          input(type="text", name="newDeviceBrand", value=(values.newDeviceBrand || ""))
+        .field
+          label Модель
+          input(type="text", name="newDeviceModel", value=(values.newDeviceModel || ""))
+        .field
+          label Серійний номер
+          input(type="text", name="newDeviceSerial", value=(values.newDeviceSerial || ""))
+        .field.field-wide
+          label Характеристики
+          input(type="text", name="newDeviceSpecs", value=(values.newDeviceSpecs || ""))
+        .field
+          label Дата покупки
+          input(type="date", name="newDevicePurchasedAt", value=(values.newDevicePurchasedAt || ""))
+
+    h3 Майстер
+    .field
+      select(name="technicianId")
+        option(value="") Не призначено
+        each u in users
+          option(value=u.id, selected=(values.technicianId === u.id))= u.name + " (" + roleLabels[u.role] + ")"
+
+    #warrantyBlock
+      h3 Гарантійне посилання
+      .field
+        label Оригінальний завершений ремонт
+        select(name="originalRequestId")
+          option(value="") Оберіть заявку…
+          each o in completed
+            option(value=o.id, selected=(values.originalRequestId === o.id))= o.number + " — " + o.client.name
+
+    .form-actions
+      button.btn.btn-primary(type="submit") Створити заявку
+      a.btn(href="/requests") Скасувати
+
+  script.
+    (function () {
+      function show(id, visible) {
+        var el = document.getElementById(id);
+        if (el) el.style.display = visible ? "" : "none";
+      }
+      function applyFilter() {
+        var clientSel = document.getElementById("clientId");
+        var devSel = document.getElementById("deviceId");
+        if (!clientSel || !devSel) return;
+        var owner = clientSel.value;
+        for (var i = 0; i < devSel.options.length; i++) {
+          var o = devSel.options[i];
+          if (!o.value) continue;
+          o.style.display = (!owner || o.dataset.owner === owner) ? "" : "none";
+        }
+        if (owner && devSel.value && devSel.options[devSel.selectedIndex].style.display === "none") {
+          devSel.selectedIndex = 0;
+        }
+      }
+      function lockExistingDevice(locked) {
+        var label = document.getElementById("existingDeviceRadioLabel");
+        if (!label) return;
+        label.style.display = locked ? "none" : "";
+        var radio = label.querySelector("input");
+        if (radio.disabled === locked) return;
+        radio.disabled = locked;
+        if (locked) {
+          var newRadio = document.querySelector('input[name="deviceMode"][value="new"]');
+          if (newRadio && !newRadio.checked) {
+            newRadio.checked = true;
+            toggle();
+          }
+        }
+      }
+      function toggle() {
+        var clientMode = document.querySelector('input[name="clientMode"]:checked').value;
+        show("existingClientBlock", clientMode === "existing");
+        show("newClientBlock", clientMode === "new");
+        lockExistingDevice(clientMode === "new");
+        var deviceMode = document.querySelector('input[name="deviceMode"]:checked').value;
+        show("existingDeviceBlock", deviceMode === "existing");
+        show("newDeviceBlock", deviceMode === "new");
+        applyFilter();
+        var type = document.getElementById("type").value;
+        show("warrantyBlock", type === "WARRANTY_CLAIM");
+      }
+      document.addEventListener("DOMContentLoaded", function () {
+        document.querySelectorAll('input[name="clientMode"], input[name="deviceMode"], #type, #clientId').forEach(function (el) {
+          el.addEventListener("change", toggle);
+        });
+        toggle();
+      });
+    })();

@@ -1,0 +1,34 @@
+extends ../layout
+
+block title
+  title Каталог робіт — Сервіс ремонту техніки
+
+block content
+  .page-head
+    .page-head-top
+      .page-head-title
+        h1 Каталог робіт
+        p.lead Базові ціни та тривалість робіт (прайс-лист)
+      a.btn.btn-primary(href="/works/new") Додати роботу
+
+  table.table
+    thead
+      tr
+        th Робота
+        th Опис
+        th.num Базова ціна
+        th.num Години
+        th.act Дії
+    tbody
+      each w in items
+        tr
+          td= w.name
+          td= w.description || "—"
+          td.num= uah(w.basePrice)
+          td.num= w.baseHours
+          td.act
+            a.btn-small.btn(href="/works/" + w.id + "/edit") Редагувати
+            a.btn-small.btn-danger(href="/works/" + w.id + "/delete") Видалити
+      if items.length === 0
+        tr
+          td(colspan=5).empty Каталог порожній

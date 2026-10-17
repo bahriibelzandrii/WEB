@@ -1,0 +1,214 @@
+{
+  "meta": {
+    "course_code": "ВЕБ",
+    "course_name": "Вебтехнології",
+    "lab_number": 2,
+    "topic": "Контролери та представлення",
+    "author": "Багрія-Белз Андрій",
+    "group": "КН-2327Б",
+    "variant": null,
+    "objective": "Реалізувати шар контролерів та представлень (server-side рендеринг із шаблонізатором Pug) для сервісу ремонту та обслуговування комп'ютерної техніки на базі моделі даних із Lab 1.",
+    "title_word": "ЗВІТ",
+    "title_style": "standard"
+  },
+  "body": [
+    {
+      "type": "task",
+      "number": 1,
+      "text": "Запустити застосування та перевірити його працездатність."
+    },
+    {
+      "type": "images",
+      "images": [
+        "C:/Programing/University/WEB/Lab_2/report/screenshots/37_health_endpoint.png"
+      ]
+    },
+    {
+      "type": "text",
+      "text": "Застосування піднято one-click скриптом: PostgreSQL 18 у Docker (порт 5433) та контейнер додатка на порту 3000. Health-чек GET /health повертає статус ok і db: up — база даних доступна."
+    },
+    {
+      "type": "task",
+      "number": 2,
+      "text": "Дашборд: картки за статусами та останні заявки."
+    },
+    {
+      "type": "images",
+      "images": [
+        "C:/Programing/University/WEB/Lab_2/report/screenshots/01_dashboard.png",
+        "C:/Programing/University/WEB/Lab_2/report/screenshots/02_requests_filter_status_inrepair.png"
+      ]
+    },
+    {
+      "type": "text",
+      "text": "Дашборд містить 8 карток (всього + 7 статусів); сума карток статусів узгоджена з загальною кількістю заявок (60). Картки клікабельні: клік по «У ремонті» відкриває список заявок із застосованим фільтром."
+    },
+    {
+      "type": "task",
+      "number": 3,
+      "text": "Список заявок: фільтри, пошук та пагінація."
+    },
+    {
+      "type": "images",
+      "images": [
+        "C:/Programing/University/WEB/Lab_2/report/screenshots/03_requests_list_page1.png",
+        "C:/Programing/University/WEB/Lab_2/report/screenshots/05_requests_filter_type_warranty.png",
+        "C:/Programing/University/WEB/Lab_2/report/screenshots/06_requests_filter_priority_urgent.png",
+        "C:/Programing/University/WEB/Lab_2/report/screenshots/04_requests_search_client.png",
+        "C:/Programing/University/WEB/Lab_2/report/screenshots/07_requests_search_number.png",
+        "C:/Programing/University/WEB/Lab_2/report/screenshots/09_requests_search_description.png",
+        "C:/Programing/University/WEB/Lab_2/report/screenshots/08_requests_empty_state.png",
+        "C:/Programing/University/WEB/Lab_2/report/screenshots/10_requests_page2.png",
+        "C:/Programing/University/WEB/Lab_2/report/screenshots/11_requests_page2_with_filter.png"
+      ]
+    },
+    {
+      "type": "text",
+      "text": "Список заявок підтримує фільтри за статусом, типом і пріоритетом, а також пошук за номером, частиною опису та іменем клієнта. Пагінація — 20 записів на сторінці, фільтри зберігаються в URL-адресі; за відсутності збігів показується повідомлення «Нічого не знайдено» з кнопкою скидання фільтрів."
+    },
+    {
+      "type": "task",
+      "number": 4,
+      "text": "Картка заявки."
+    },
+    {
+      "type": "images",
+      "images": [
+        "C:/Programing/University/WEB/Lab_2/report/screenshots/12_request_card_new.png",
+        "C:/Programing/University/WEB/Lab_2/report/screenshots/13_request_card_inrepair.png",
+        "C:/Programing/University/WEB/Lab_2/report/screenshots/14_request_card_completed.png"
+      ]
+    },
+    {
+      "type": "text",
+      "text": "Картка заявки містить 13 секцій (клієнт, пристрій, діагностика, роботи, запчастини, оцінка, рахунок, гарантія, коментарі, вкладення) та кнопки дозволених переходів статусів. Статус, тип і пріоритет показані кольоровими бейджами українською; клієнт і пристрій ведуть на свої картки."
+    },
+    {
+      "type": "task",
+      "number": 5,
+      "text": "Створення заявки (валідація, авто-номер, inline-клієнт/пристрій)."
+    },
+    {
+      "type": "images",
+      "images": [
+        "C:/Programing/University/WEB/Lab_2/report/screenshots/15_request_create_form.png",
+        "C:/Programing/University/WEB/Lab_2/report/screenshots/16_request_create_validation_error.png",
+        "C:/Programing/University/WEB/Lab_2/report/screenshots/17_request_create_server_400.png",
+        "C:/Programing/University/WEB/Lab_2/report/screenshots/18_request_create_400_values_preserved.png",
+        "C:/Programing/University/WEB/Lab_2/report/screenshots/19_request_created_existing.png",
+        "C:/Programing/University/WEB/Lab_2/report/screenshots/20_request_created_new_client_device.png"
+      ]
+    },
+    {
+      "type": "text",
+      "text": "Форма створення заявки підтримує вибір існуючих або нових (inline) клієнта й пристрою. Валідація працює на двох рівнях: браузерна (обов'язкові поля) та серверна — HTTP 400 зі списком помилок і збереженням введеного. Заявці присвоюється автоматичний номер R-2026-NNNN (max+1 за рік), нові клієнт і пристрій створюються разом із заявкою в одній транзакції."
+    },
+    {
+      "type": "task",
+      "number": 6,
+      "text": "Гарантійне звернення (WARRANTY_CLAIM)."
+    },
+    {
+      "type": "images",
+      "images": [
+        "C:/Programing/University/WEB/Lab_2/report/screenshots/25_create_warranty_block_visible.png",
+        "C:/Programing/University/WEB/Lab_2/report/screenshots/26_create_warranty_no_original_error.png",
+        "C:/Programing/University/WEB/Lab_2/report/screenshots/27_request_warranty_created.png"
+      ]
+    },
+    {
+      "type": "text",
+      "text": "Блок «Гарантійне посилання» у формі з'являється лише для типу «Гарантійне звернення» і містить список завершених ремонтів. Без вибору оригіналу сервер повертає помилку; з обраним оригіналом зв'язок гарантійного звернення з початковим ремонтом зберігається."
+    },
+    {
+      "type": "task",
+      "number": 7,
+      "text": "Редагування заявки та переходи статусів."
+    },
+    {
+      "type": "images",
+      "images": [
+        "C:/Programing/University/WEB/Lab_2/report/screenshots/28_request_edit_form.png",
+        "C:/Programing/University/WEB/Lab_2/report/screenshots/29_request_after_edit.png",
+        "C:/Programing/University/WEB/Lab_2/report/screenshots/30_request_after_transition.png",
+        "C:/Programing/University/WEB/Lab_2/report/screenshots/31_request_invalid_transition_banner.png"
+      ]
+    },
+    {
+      "type": "text",
+      "text": "Редагування змінює опис, пріоритет, майстра, клієнта та пристрій; номер і тип заявки лишаються незмінними. Валідний перехід «Нова → У діагностиці» виконується, а заборонений перехід (NEW → COMPLETED) відхиляється банером «Недозволений перехід статусів» без зміни статусу."
+    },
+    {
+      "type": "task",
+      "number": 8,
+      "text": "Клієнти: список, пошук, картка з історією."
+    },
+    {
+      "type": "images",
+      "images": [
+        "C:/Programing/University/WEB/Lab_2/report/screenshots/32_clients_list.png",
+        "C:/Programing/University/WEB/Lab_2/report/screenshots/21_clients_search_new.png",
+        "C:/Programing/University/WEB/Lab_2/report/screenshots/22_client_card_new.png",
+        "C:/Programing/University/WEB/Lab_2/report/screenshots/38_client_card_history.png"
+      ]
+    },
+    {
+      "type": "text",
+      "text": "Список клієнтів — таблиця з лічильниками заявок і пристроїв та пошуком за ім'ям і телефоном. Картка клієнта показує контакти, його пристрої та повну історію заявок."
+    },
+    {
+      "type": "task",
+      "number": 9,
+      "text": "Пристрої: список, пошук, картка."
+    },
+    {
+      "type": "images",
+      "images": [
+        "C:/Programing/University/WEB/Lab_2/report/screenshots/33_devices_list.png",
+        "C:/Programing/University/WEB/Lab_2/report/screenshots/23_devices_search_new.png",
+        "C:/Programing/University/WEB/Lab_2/report/screenshots/24_device_card_new.png"
+      ]
+    },
+    {
+      "type": "text",
+      "text": "Список пристроїв підтримує пошук за брендом, моделлю та серійним номером. Картка пристрою містить характеристики, власника та історію заявок на ремонт."
+    },
+    {
+      "type": "task",
+      "number": 10,
+      "text": "Каталог робіт та сторінки помилок."
+    },
+    {
+      "type": "images",
+      "images": [
+        "C:/Programing/University/WEB/Lab_2/report/screenshots/34_works_catalog.png",
+        "C:/Programing/University/WEB/Lab_2/report/screenshots/35_error_404_page.png",
+        "C:/Programing/University/WEB/Lab_2/report/screenshots/36_error_404_request_not_found.png"
+      ]
+    },
+    {
+      "type": "text",
+      "text": "Каталог робіт — read-only прайс-лист: 14 робіт, ціни в гривнях, сортування за назвою. Неіснуючі маршрути та записи повертають стилізовані сторінки 404 з навігацією."
+    },
+    {
+      "type": "task",
+      "number": 11,
+      "text": "Фінальний стан: цілісність даних після тестування."
+    },
+    {
+      "type": "images",
+      "images": [
+        "C:/Programing/University/WEB/Lab_2/report/screenshots/39_dashboard_final.png"
+      ]
+    },
+    {
+      "type": "text",
+      "text": "Після всіх сценаріїв у базі 63 заявки (60 демонстраційних + 3, створені під час тестування); картки дашборда узгоджені, а бізнес-інваріанти моделі І1–І10 виконані (10/10)."
+    }
+  ],
+  "conclusion": "На цій лабораторній роботі я ознайомився з реалізацією шару контролерів та представлень у Node.js-застосунку: збирав серверні запити за query-параметрами, рендерив Pug-шаблони та обробляв форми з серверною валідацією. У цій роботі я навчився будувати машину станів статусів заявки, створювати записи у транзакціях із автоматичною нумерацією та демонструвати роботу застосунка через повне E2E-тестування. Закріпив основи роботи із server-side рендерингом.",
+  "output": {
+    "dir": "C:/Programing/University/WEB/Lab_2/report",
+    "format": "docx"
+  }
+}

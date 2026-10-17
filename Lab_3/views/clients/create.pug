@@ -1,0 +1,30 @@
+extends ../layout
+
+block title
+  title Новий клієнт — Сервіс ремонту техніки
+
+block content
+  .page-head
+    h1 Новий клієнт
+
+  form(method="post", action="/clients")
+    .form-grid
+      .field
+        label Ім'я / назва
+        input(type="text", name="name", value=(values && values.name || ""))
+      .field
+        label Телефон
+        input(type="text", name="phone", placeholder="+380671234501", value=(values && values.phone || ""))
+      .field
+        label Email
+        input(type="email", name="email", value=(values && values.email || ""))
+      .field
+        label Адреса
+        input(type="text", name="address", value=(values && values.address || ""))
+      .field.field-wide
+        label Примітки
+        textarea(name="notes", rows="3")= (values && values.notes || "")
+
+    .form-actions
+      button.btn.btn-primary(type="submit") Створити клієнта
+      a.btn(href="/clients") Скасувати
