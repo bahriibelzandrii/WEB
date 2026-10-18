@@ -26,7 +26,7 @@ body {
 }
 
 .container { max-width: 1100px; margin: 0 auto; padding: 0 16px; }
-main.container { padding-top: 24px; padding-bottom: 48px; flex: 1; }
+main.container { padding-top: 24px; padding-bottom: 48px; flex: 1; width: 100%; }
 
 a { color: var(--primary); }
 
@@ -63,6 +63,13 @@ a { color: var(--primary); }
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 999px;
+  max-width: 320px;
+  min-width: 0;
+}
+.nav-user .chip-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .role-badge {
   font-size: 0.72rem;
@@ -300,6 +307,7 @@ td form.inline + form.inline {
 
 .field { margin-bottom: 14px; display: flex; flex-direction: column; gap: 6px; }
 .field > label { font-weight: 600; font-size: 0.9rem; }
+.field > input, .field > select, .field > textarea { width: 100%; }
 .field input, .field select, .field textarea {
   padding: 8px 10px;
   border: 1px solid var(--border);
@@ -406,15 +414,26 @@ ul.attachments { list-style: none; padding: 0; margin: 4px 0; display: flex; fle
 }
 
 /* Швидкий вхід (демо-акаунти, Lab 4) */
-.quick-login { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 10px; }
-.quick-login .quick-label { color: var(--muted); font-size: 0.85rem; }
+.quick-login {
+  max-width: 480px;
+  margin: 16px auto 40px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px 18px;
+}
+.quick-login h2 { font-size: 1rem; margin: 0 0 2px; }
+.quick-login .lead { font-size: 0.85rem; margin: 0 0 12px; }
+.quick-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 6px; }
 .quick-btn {
-  padding: 4px 10px;
-  font-size: 0.85rem;
+  padding: 7px 10px;
+  font-size: 0.88rem;
+  font-weight: 500;
   border: 1px solid var(--border);
   border-radius: 6px;
   background: var(--bg);
   color: var(--text);
   cursor: pointer;
 }
-.quick-btn:hover { border-color: var(--primary); color: var(--primary); background: var(--card); }
+.quick-btn:hover { border-color: var(--primary); color: var(--primary); background: #fff; }

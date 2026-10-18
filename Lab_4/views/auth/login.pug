@@ -20,12 +20,10 @@ block content
       .form-actions
         button.btn.btn-primary(type="submit") Увійти
         a.btn(href="/register") Зареєструватись
-      p.auth-hint
-        | Демонстраційні акаунти:
-        a(href="/") admin@, client@, tech1@, tech2@, visitor@ (домен service.ua, пароль
-        code Secret123)
-    .quick-login
-      span.quick-label Швидкий вхід (1 клік — авто-заповнення і вхід):
+  .quick-login
+    h2 Швидкий вхід
+    p.lead 1 клік — автоматичне заповнення та вхід під демо-акаунтом
+    .quick-grid
       button(type="button").quick-btn(data-email="client@service.ua") Клієнт
       button(type="button").quick-btn(data-email="tech1@service.ua") Майстер 1
       button(type="button").quick-btn(data-email="tech2@service.ua") Майстер 2

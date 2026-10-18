@@ -19,7 +19,7 @@ header.site-header
     .nav-user
       if user
         span.user-chip
-          = user.name
+          span.chip-name= user.name
           span.role-badge= roleLabel
         a(href="/logout") Вийти
       else
