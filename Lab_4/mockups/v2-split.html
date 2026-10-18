@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<title>V2 — Спліт + картка заявки</title>
+<style>
+  :root { --bg:#f4f5f7; --card:#fff; --text:#1f2933; --muted:#6b7280; --border:#e2e5ea;
+          --primary:#2563eb; --primary-dark:#1d4ed8; --radius:10px; --shadow:0 1px 3px rgba(16,24,40,.08); }
+  * { box-sizing:border-box; margin:0; }
+  body { font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif; background:var(--bg);
+    color:var(--text); line-height:1.5; min-height:100vh; display:flex; flex-direction:column; }
+  .container { max-width:1100px; margin:0 auto; padding:0 16px; width:100%; }
+  .site-header { background:var(--card); border-bottom:1px solid var(--border); box-shadow:var(--shadow); }
+  .nav { display:flex; align-items:center; gap:14px; padding:12px 16px; flex-wrap:wrap; }
+  .nav .brand { font-weight:700; text-decoration:none; color:var(--text); margin-right:10px; }
+  .nav a:not(.brand) { color:var(--muted); text-decoration:none; padding:6px 10px; border-radius:6px; font-size:.95rem; }
+  .nav a.active { color:var(--primary); font-weight:700; }
+  .nav-user { margin-left:auto; display:flex; gap:8px; align-items:center; }
+  .btn { display:inline-block; background:var(--card); border:1px solid var(--border); color:var(--text);
+    padding:8px 14px; border-radius:8px; font-size:.95rem; font-weight:500; text-decoration:none; cursor:pointer; }
+  .btn:hover { border-color:var(--primary); color:var(--primary); }
+  .btn-primary { background:var(--primary); border-color:var(--primary); color:#fff; }
+  .btn-primary:hover { background:var(--primary-dark); border-color:var(--primary-dark); color:#fff; }
+  .hero { display:grid; grid-template-columns:1.05fr .95fr; gap:40px; align-items:center; padding:52px 0 20px; }
+  .hero h1 { font-size:2.4rem; letter-spacing:-.01em; margin-bottom:14px; }
+  .hero h1 span { color:var(--primary); }
+  .lead { font-size:1.05rem; color:var(--muted); line-height:1.6; margin-bottom:22px; }
+  .cta { display:flex; gap:12px; margin-bottom:14px; }
+  .note { color:var(--muted); font-size:.88rem; }
+  .req { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; }
+  .req-head { display:flex; justify-content:space-between; align-items:center; padding:14px 18px; border-bottom:1px solid var(--border); background:#fafbfc; }
+  .req-head b { font-size:1rem; }
+  .badge { display:inline-block; padding:3px 10px; border-radius:999px; font-size:.78rem; font-weight:600; }
+  .b-done { background:#dcfce7; color:#166534; } .b-new { background:#dbeafe; color:#1e40af; }
+  .req-body { padding:16px 18px; }
+  .row { display:flex; justify-content:space-between; gap:12px; padding:9px 0; border-bottom:1px solid var(--border); font-size:.92rem; }
+  .row:last-child { border-bottom:none; }
+  .row span { color:var(--muted); } .row b { text-align:right; }
+  .hl { color:var(--primary); font-weight:600; }
+  .steps-band { padding:36px 0 8px; }
+  .steps-band h2 { font-size:1.3rem; margin-bottom:18px; text-align:center; }
+  .flow { display:grid; grid-template-columns:1fr 34px 1fr 34px 1fr; gap:0; align-items:stretch; }
+  .fstep { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:18px; box-shadow:var(--shadow); }
+  .fstep .n { width:28px; height:28px; border-radius:50%; background:var(--primary); color:#fff; font-weight:700;
+    font-size:.9rem; display:grid; place-items:center; }
+  .fstep h3 { font-size:1rem; margin:10px 0 6px; }
+  .fstep p { color:var(--muted); font-size:.88rem; line-height:1.5; }
+  .arrow { display:grid; place-items:center; color:var(--primary); font-size:1.4rem; font-weight:700; }
+  .devs { text-align:center; margin:40px 0 20px; }
+  .devs .badge { background:var(--bg); color:var(--text); border:1px solid var(--border); margin:4px; font-weight:500; }
+  .band-cta { margin:8px 0 48px; background:var(--primary); border-radius:var(--radius); color:#fff;
+    padding:26px 28px; display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap; }
+  .band-cta b { font-size:1.25rem; display:block; margin-bottom:4px; }
+  .band-cta p { opacity:.85; font-size:.95rem; max-width:560px; }
+  .band-cta .btn { background:#fff; border-color:#fff; color:var(--primary); font-weight:700; }
+  footer { border-top:1px solid var(--border); background:var(--card); padding:16px 0; color:var(--muted); font-size:.9rem; margin-top:auto; }
+  footer .container { display:flex; justify-content:space-between; }
+</style>
+</head>
+<body>
+<header class="site-header"><div class="container"><div class="nav">
+  <a class="brand" href="#">ТехСервіс</a>
+  <a class="active" href="#">Головна</a><a href="#">Як це працює</a><a href="#">Гарантія</a>
+  <div class="nav-user"><a class="btn" href="#">Увійти</a><a class="btn btn-primary" href="#">Реєструватись</a></div>
+</div></div></header>
+<div class="container">
+  <section class="hero">
+    <div>
+      <h1>Уся історія вашого пристрою — <span>на одному екрані</span></h1>
+      <p class="lead">Діагностика, оцінка, рахунок, оплата і гарантія — кожен крок зафіксований у заявці. Жодних «подивимось» і чорних скринь.</p>
+      <div class="cta"><a class="btn btn-primary" href="#">Почати заявку</a><a class="btn" href="#">Демо-акаунти</a></div>
+      <p class="note">Оцінка погоджується вами перед ремонтом · статус видно онлайн</p>
+    </div>
+    <div class="req">
+      <div class="req-head"><b>Заявка R-2026-0187</b><span class="badge b-done">Ремонт завершено</span></div>
+      <div class="req-body">
+        <div class="row"><span>Пристрій</span><b>Ноутбук Lenovo T14</b></div>
+        <div class="row"><span>Висновок</span><b>Заміна SSD, оновлення термопаста</b></div>
+        <div class="row"><span>Оцінка</span><b class="hl">1 450 ₴ · погоджено</b></div>
+        <div class="row"><span>Рахунок</span><b>Оплачено · 31.03.2026</b></div>
+        <div class="row"><span>Гарантія</span><b>12 місяців</b></div>
+      </div>
+    </div>
+  </section>
+  <section class="steps-band">
+    <h2>Три кроки до результату</h2>
+    <div class="flow">
+      <div class="fstep"><div class="n">1</div><h3>Звернення</h3><p>Опишіть проблему самостійно або через майстра. Оберіть пристрій.</p></div>
+      <div class="arrow">→</div>
+      <div class="fstep"><div class="n">2</div><h3>Діагностика та оцінка</h3><p>Висновки фіксуються в заявці. Ремонт — лише після вашого «так».</p></div>
+      <div class="arrow">→</div>
+      <div class="fstep"><div class="n">3</div><h3>Ремонт і гарантія</h3><p>Роботи, запчастини, рахунок і платіж — в одній картці заявки.</p></div>
+    </div>
+  </section>
+  <div class="devs">
+    <span class="badge">ПК</span><span class="badge">Ноутбуки</span><span class="badge">Монітори</span>
+    <span class="badge">Телефони</span><span class="badge">Планшети</span><span class="badge">Принтери</span>
+    <span class="badge">Інша техніка</span>
+  </div>
+  <div class="band-cta">
+    <div><b>Готові? Створіть заявку за 2 хвилини</b><p>Або попросіть майстра оформити заявку на місці — вам лише потрібно погодити оцінку.</p></div>
+    <a class="btn" href="#">Реєструватись →</a>
+  </div>
+</div>
+<footer><div class="container"><span>Сервіс ремонту та обслуговування комп’ютерної техніки</span><span>© 2026 · mockup V2</span></div></footer>
+</body>
+</html>

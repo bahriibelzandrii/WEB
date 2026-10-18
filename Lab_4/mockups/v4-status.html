@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<title>V4 — Таблиця статусів</title>
+<style>
+  :root { --bg:#f4f5f7; --card:#fff; --text:#1f2933; --muted:#6b7280; --border:#e2e5ea;
+          --primary:#2563eb; --primary-dark:#1d4ed8; --radius:10px; --shadow:0 1px 3px rgba(16,24,40,.08); }
+  * { box-sizing:border-box; margin:0; }
+  body { font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif; background:var(--bg);
+    color:var(--text); line-height:1.5; min-height:100vh; display:flex; flex-direction:column; }
+  .container { max-width:1100px; margin:0 auto; padding:0 16px; width:100%; }
+  .site-header { background:var(--card); border-bottom:1px solid var(--border); box-shadow:var(--shadow); }
+  .nav { display:flex; align-items:center; gap:14px; padding:12px 16px; flex-wrap:wrap; }
+  .nav .brand { font-weight:700; text-decoration:none; color:var(--text); margin-right:10px; }
+  .nav a:not(.brand) { color:var(--muted); text-decoration:none; padding:6px 10px; border-radius:6px; font-size:.95rem; }
+  .nav a.active { color:var(--primary); font-weight:700; }
+  .nav-user { margin-left:auto; display:flex; gap:8px; align-items:center; }
+  .btn { display:inline-block; background:var(--card); border:1px solid var(--border); color:var(--text);
+    padding:8px 14px; border-radius:8px; font-size:.95rem; font-weight:500; text-decoration:none; cursor:pointer; }
+  .btn:hover { border-color:var(--primary); color:var(--primary); }
+  .btn-primary { background:var(--primary); border-color:var(--primary); color:#fff; }
+  .btn-primary:hover { background:var(--primary-dark); border-color:var(--primary-dark); color:#fff; }
+  .hero { display:grid; grid-template-columns:.9fr 1.1fr; gap:36px; align-items:center; padding:48px 0 16px; }
+  .hero h1 { font-size:2.3rem; letter-spacing:-.01em; margin-bottom:14px; line-height:1.15; }
+  .hero h1 span { color:var(--primary); }
+  .lead { font-size:1.02rem; color:var(--muted); line-height:1.6; margin-bottom:22px; }
+  .cta { display:flex; gap:12px; margin-bottom:12px; flex-wrap:wrap; }
+  .note { color:var(--muted); font-size:.88rem; }
+  .panel { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; }
+  .panel-head { display:flex; justify-content:space-between; align-items:center; padding:12px 16px;
+    border-bottom:1px solid var(--border); background:#fafbfc; }
+  .panel-head b { font-size:.95rem; }
+  .live { color:#166534; font-size:.8rem; font-weight:600; }
+  table.table { width:100%; border-collapse:collapse; font-size:.9rem; }
+  .table th, .table td { text-align:left; padding:10px 14px; border-bottom:1px solid var(--border); }
+  .table th { background:#fafbfc; font-weight:600; white-space:nowrap; }
+  .table tbody tr:hover { background:#f8fafc; }
+  .table tr:last-child td { border-bottom:none; }
+  .table td.num { text-align:right; font-weight:600; white-space:nowrap; }
+  .badge { display:inline-block; padding:3px 10px; border-radius:999px; font-size:.78rem; font-weight:600; white-space:nowrap; }
+  .b-new { background:#e5e7eb; color:#374151; } .b-wip { background:#dbeafe; color:#1e40af; }
+  .b-est { background:#fef3c7; color:#92400e; } .b-rep { background:#ffedd5; color:#9a3412; } .b-done { background:#dcfce7; color:#166534; }
+  .section { padding:34px 0 6px; }
+  .section h2 { font-size:1.3rem; margin-bottom:16px; }
+  .vsteps { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+  .vstep { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:18px 20px;
+    box-shadow:var(--shadow); border-top:3px solid var(--primary); }
+  .vstep .n { font-size:1.7rem; font-weight:800; color:var(--primary); line-height:1; }
+  .vstep h3 { font-size:1rem; margin:10px 0 6px; }
+  .vstep p { color:var(--muted); font-size:.88rem; line-height:1.5; }
+  .devs { text-align:center; margin:36px 0 20px; }
+  .devs .badge { background:var(--card); color:var(--text); border:1px solid var(--border); margin:4px; font-weight:500; }
+  .band-cta { margin:10px 0 44px; background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+    padding:22px 26px; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+    box-shadow:var(--shadow); }
+  .band-cta b { font-size:1.15rem; display:block; margin-bottom:2px; }
+  .band-cta p { color:var(--muted); font-size:.92rem; max-width:560px; }
+  footer { border-top:1px solid var(--border); background:var(--card); padding:16px 0; color:var(--muted); font-size:.9rem; margin-top:auto; }
+  footer .container { display:flex; justify-content:space-between; }
+</style>
+</head>
+<body>
+<header class="site-header"><div class="container"><div class="nav">
+  <a class="brand" href="#">ТехСервіс</a>
+  <a class="active" href="#">Головна</a><a href="#">Як це працює</a><a href="#">Гарантія</a>
+  <div class="nav-user"><a class="btn" href="#">Увійти</a><a class="btn btn-primary" href="#">Реєструватись</a></div>
+</div></div></header>
+<div class="container">
+  <section class="hero">
+    <div>
+      <h1>Статус кожного пристрою — <span>наочно</span></h1>
+      <p class="lead">Після входу ви бачите всі свої заявки: що діагностується, що в роботі, що готово до видачі. Рахунок і оплати — поруч, без дзвінків «а як там мій ноутбук?».</p>
+      <div class="cta"><a class="btn btn-primary" href="#">Увійти в кабінет</a><a class="btn" href="#">Як це працює ↓</a></div>
+      <p class="note">Для швидкої перевірки на сторінці входу є кнопки демо-акаунтів.</p>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><b>Мої заявки</b><span class="live">● оновлено щойно</span></div>
+      <table class="table">
+        <thead><tr><th>№</th><th>Пристрій</th><th>Статус</th><th class="num">Сума</th></tr></thead>
+        <tbody>
+          <tr><td>R-0184</td><td>Ноутбук HP EliteBook 840</td><td><span class="badge b-wip">Діагностика</span></td><td class="num">—</td></tr>
+          <tr><td>R-0185</td><td>ПК · ігрова система</td><td><span class="badge b-est">Оцінка готова</span></td><td class="num">2 300 ₴</td></tr>
+          <tr><td>R-0186</td><td>Ноутбук MacBook Air M1</td><td><span class="badge b-rep">В роботі</span></td><td class="num">3 800 ₴</td></tr>
+          <tr><td>R-0187</td><td>Принтер Epson L3210</td><td><span class="badge b-done">Завершено</span></td><td class="num">980 ₴</td></tr>
+          <tr><td>R-0190</td><td>Телефон iPhone 13</td><td><span class="badge b-new">Нова</span></td><td class="num">—</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+  <section class="section">
+    <h2>Як проходить ремонт</h2>
+    <div class="vsteps">
+      <div class="vstep"><div class="n">01</div><h3>Звернення</h3><p>Заявка — самостійно під час входу або через майстра. Оберіть пристрій і опишіть проблему.</p></div>
+      <div class="vstep"><div class="n">02</div><h3>Діагностика та оцінка</h3><p>Майстер фіксує висновки, ви погоджуєте оцінку. Без згод ремонту не починаємо.</p></div>
+      <div class="vstep"><div class="n">03</div><h3>Ремонт і гарантія</h3><p>Роботи, запчастини, рахунок і платіж — у картці заявки. Гарантія 12 місяців.</p></div>
+    </div>
+  </section>
+  <div class="devs">
+    <span class="badge">ПК</span><span class="badge">Ноутбуки</span><span class="badge">Монітори</span>
+    <span class="badge">Телефони</span><span class="badge">Планшети</span><span class="badge">Принтери</span>
+    <span class="badge">Інша техніка</span>
+  </div>
+  <div class="band-cta">
+    <div><b>Покажемо ваші заявки за 30 секунд</b><p>Увійдіть під демо-акаунтом — побачите реальний сценарій: діагностика, оцінка, ремонт, оплата.</p></div>
+    <a class="btn btn-primary" href="#">Спробувати зараз →</a>
+  </div>
+</div>
+<footer><div class="container"><span>Сервіс ремонту та обслуговування комп’ютерної техніки</span><span>© 2026 · mockup V4</span></div></footer>
+</body>
+</html>
