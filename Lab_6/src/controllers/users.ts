@@ -10,10 +10,24 @@ const ROLES = ["VISITOR", "TECHNICIAN", "MANAGER", "ADMIN"] as const;
 
 const commonLocals = { roleLabels: ROLE_LABELS, roles: ROLES, dateTime };
 
-function isFkViolation(err: unknown): boolean {
-  if (typeof err !== "object" || err === null || !("code" in err)) return false;
-  return err.code === "P2003";
+function errCode(err: unknown): string | null {
+  if (typeof err !== "object" || err === null || !("code" in err)) return null;
+  const c = (err as { code: unknown }).code;
+  return typeof c === "string" ? c : null;
 }
+
+function isFkViolation(err: unknown): boolean {
+  return errCode(err) === "P2003";
+}
+
+const USER_SELECT = {
+  id: true,
+  name: true,
+  email: true,
+  phone: true,
+  role: true,
+  createdAt: true,
+};
 
 export function validateUser(
   body: Record<string, unknown>,
@@ -55,6 +69,7 @@ export async function index(req: Request, res: Response) {
           ],
         }
       : undefined,
+    select: USER_SELECT,
     orderBy: { createdAt: "asc" },
   });
   res.render("users/index", {
@@ -113,7 +128,10 @@ export async function create(req: Request, res: Response) {
 
 /** GET /users/:id/edit — форма редагування користувача. */
 export async function editForm(req: Request, res: Response) {
-  const user = await prisma.user.findUnique({ where: { id: String(req.params.id) } });
+  const user = await prisma.user.findUnique({
+    where: { id: String(req.params.id) },
+    select: USER_SELECT,
+  });
   if (!user) {
     res.status(404).render("errors/404", { title: "Користувача не знайдено" });
     return;
@@ -134,7 +152,10 @@ export async function edit(req: Request, res: Response) {
   const password = String(b.password ?? "");
   const { errors, values } = validateUser(b, { requirePassword: false });
 
-  const existing = await prisma.user.findUnique({ where: { id: id } });
+  const existing = await prisma.user.findUnique({
+    where: { id },
+    select: USER_SELECT,
+  });
   if (!existing) {
     res.status(404).render("errors/404", { title: "Користувача не знайдено" });
     return;
@@ -165,6 +186,10 @@ export async function edit(req: Request, res: Response) {
     await prisma.user.update({ where: { id }, data });
     res.redirect("/users");
   } catch (err) {
+    if (errCode(err) === "P2025") {
+      res.status(404).render("errors/404", { title: "Користувача не знайдено" });
+      return;
+    }
     if (isUniqueViolation(err)) {
       res.status(400).render("users/edit", {
         nav: "users",
@@ -181,7 +206,10 @@ export async function edit(req: Request, res: Response) {
 
 /** GET /users/:id/delete — сторінка підтвердження видалення. */
 export async function confirmRemove(req: Request, res: Response) {
-  const user = await prisma.user.findUnique({ where: { id: String(req.params.id) } });
+  const user = await prisma.user.findUnique({
+    where: { id: String(req.params.id) },
+    select: USER_SELECT,
+  });
   if (!user) {
     res.status(404).render("errors/404", { title: "Користувача не знайдено" });
     return;
@@ -214,6 +242,10 @@ export async function remove(req: Request, res: Response) {
     await prisma.user.delete({ where: { id } });
     res.redirect("/users");
   } catch (err) {
+    if (errCode(err) === "P2025") {
+      res.status(404).render("errors/404", { title: "Користувача не знайдено" });
+      return;
+    }
     if (isFkViolation(err)) {
       res.status(400).render("confirm-delete", {
         confirmTitle: "Видалити неможливо: користувач прив'язаний до даних системи",

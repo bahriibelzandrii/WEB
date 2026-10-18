@@ -248,21 +248,28 @@ const USER_SELECT = {
 };
 
 export async function listUsers(req: Request, res: Response) {
+  const pq = parsePageQuery(req);
   const q = String(req.query.q ?? "").trim();
-  const users = await prisma.user.findMany({
-    where: q
-      ? {
-          OR: [
-            { name: { contains: q, ...INS } },
-            { email: { contains: q, ...INS } },
-            { phone: { contains: q } },
-          ],
-        }
-      : {},
-    select: USER_SELECT,
-    orderBy: { name: "asc" },
-  });
-  res.json({ data: users });
+  const where = q
+    ? {
+        OR: [
+          { name: { contains: q, ...INS } },
+          { email: { contains: q, ...INS } },
+          { phone: { contains: q } },
+        ],
+      }
+    : {};
+  const [data, total] = await Promise.all([
+    prisma.user.findMany({
+      where,
+      select: USER_SELECT,
+      orderBy: { name: "asc" },
+      skip: pq.skip,
+      take: pq.pageSize,
+    }),
+    prisma.user.count({ where }),
+  ]);
+  envelope(res, data, pq.page, pq.pageSize, total);
 }
 
 export async function getUser(req: Request, res: Response) {

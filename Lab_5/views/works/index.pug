@@ -27,9 +27,10 @@ block content
           td= w.description || "—"
           td.num= uah(w.basePrice)
           td.num= w.baseHours
-          if can.manage
-            a.btn-small.btn(href="/works/" + w.id + "/edit") Редагувати
-            a.btn-small.btn-danger(href="/works/" + w.id + "/delete") Видалити
+          td.act
+            if can.manage
+              a.btn-small.btn(href="/works/" + w.id + "/edit") Редагувати
+              a.btn-small.btn-danger(href="/works/" + w.id + "/delete") Видалити
       if items.length === 0
         tr
           td(colspan=5).empty Каталог порожній

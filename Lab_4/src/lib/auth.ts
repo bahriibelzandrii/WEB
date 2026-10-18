@@ -43,8 +43,8 @@ declare global {
   }
 }
 
-const SESSION_SECRET =
-  process.env.SESSION_SECRET ?? "lab4-dev-secret-change-me";
+/** Сіль HMAC сесій. Обов'язкова: публічний fallback-секрет у коді — відома слабка точка. */
+const SESSION_SECRET = process.env.SESSION_SECRET;
 
 function shortUser(id: string) {
   return prisma.user.findUnique({
@@ -58,6 +58,11 @@ function shortUser(id: string) {
  * Також наповнює res.locals.user / res.locals.roleLabel для шаблонів.
  */
 export function initAuth(app: Express) {
+  if (!SESSION_SECRET) {
+    throw new Error(
+      "SESSION_SECRET не встановлено: додайте змінну (див. .env.example / docker-compose.yml)",
+    );
+  }
   app.use(
     session({
       secret: SESSION_SECRET,
@@ -80,11 +85,13 @@ export function initAuth(app: Express) {
       (email, password, done) => {
         prisma.user
           .findUnique({ where: { email: String(email).trim().toLowerCase() } })
-          .then((user) => {
+          .then(async (user) => {
             if (!user) {
               return done(null, false, { message: "Невірний email або пароль" });
             }
-            if (!bcrypt.compareSync(password, user.password)) {
+            // bcrypt.compare (async) — без блокування event loop (compareSync — minor).
+            const ok = await bcrypt.compare(String(password), user.password);
+            if (!ok) {
               return done(null, false, { message: "Невірний email або пароль" });
             }
             return done(

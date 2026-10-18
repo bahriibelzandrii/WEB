@@ -1,7 +1,8 @@
 services:
   db:
-    image: postgres:18
+    # Назви контейнерів і порт 3000 спільні для всіх лаб — одночасно працює лише один
     container_name: lab1_service_db
+    image: postgres:18
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -28,6 +29,8 @@ services:
       # У compose-мережі БД доступна як db:5432 (не localhost:5433)
       DATABASE_URL: "postgresql://postgres:postgres@db:5432/lab1_service?schema=public"
       PORT: "3000"
+      # Сіль HMAC сесій — обов'язкова (без неї додаток не стартує, lib/auth.ts)
+      SESSION_SECRET: "lab5-local-dev-secret"
     volumes:
       # Завантажені файли заявок зберігаються між перезапусками (D42)
       - uploads:/app/uploads

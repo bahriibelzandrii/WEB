@@ -4,7 +4,7 @@ setlocal EnableExtensions
 cd /d "%~dp0"
 
 echo ====================================================
-echo   Lab 4. Serwis remontu (авторизація, 4 ролі)
+echo   Lab 5. Serwis remontu (web + 4 ролі)
 echo   one-click launch (Docker: app + PostgreSQL 18)
 echo ====================================================
 echo.

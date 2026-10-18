@@ -37,8 +37,9 @@ block content
           td= c.address || "—"
           td.num= c._count.devices
           td.num= c._count.requests
-          if can.manage
-            a.btn-small.btn-danger(href="/clients/" + c.id + "/delete") Видалити
+          td.act
+            if can.manage
+              a.btn-small.btn-danger(href="/clients/" + c.id + "/delete") Видалити
       if items.length === 0
         tr
           td(colspan=7).empty

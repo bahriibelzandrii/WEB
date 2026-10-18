@@ -25,9 +25,10 @@ block content
           td= p.name
           td= p.sku || "—"
           td.num= uah(p.price)
-          if can.manage
-            a.btn-small.btn(href="/parts/" + p.id + "/edit") Редагувати
-            a.btn-small.btn-danger(href="/parts/" + p.id + "/delete") Видалити
+          td.act
+            if can.manage
+              a.btn-small.btn(href="/parts/" + p.id + "/edit") Редагувати
+              a.btn-small.btn-danger(href="/parts/" + p.id + "/delete") Видалити
       if items.length === 0
         tr
           td(colspan=4).empty Каталог порожній

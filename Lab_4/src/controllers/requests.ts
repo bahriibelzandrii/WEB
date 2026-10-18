@@ -32,8 +32,10 @@ const PAGE_SIZE = 20;
 /** Каталог файлів заявок (D42): uploads/<requestId>/<ts>-<name>, serve /uploads. */
 const UPLOAD_ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "uploads");
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
-/** Сьогодні, UTC-опівніч (date-only, D34) — дефолт для дат форм. */
-const TODAY = parseDateOnly(new Date().toISOString().slice(0, 10))!;
+/** Сьогодні, UTC-опівніч (date-only, D34) — дефолт для дат форм; рахується на кожен виклик. */
+function today(): Date {
+  return parseDateOnly(new Date().toISOString().slice(0, 10))!;
+}
 
 function parsePage(raw: unknown): number {
   const n = Number(raw);
@@ -44,15 +46,6 @@ function pageNumbers(page: number, total: number): number[] {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
   const start = Math.max(1, Math.min(page - 3, total - 6));
   return Array.from({ length: 7 }, (_, i) => start + i);
-}
-
-async function adminUser() {
-  const admin = await prisma.user.findFirst({
-    where: { role: "ADMIN" },
-    orderBy: { createdAt: "asc" },
-  });
-  if (!admin) throw new Error("ADMIN user not found");
-  return admin;
 }
 
 /** Номер заявки: R-YYYY-NNNN, max+1 за поточний рік (формат seed). */
@@ -114,7 +107,9 @@ const commonLocals = {
   dateTime,
   uah,
   bytes,
-  today: TODAY.toISOString().slice(0, 10),
+  get today(): string {
+    return today().toISOString().slice(0, 10);
+  },
 };
 
 /** GET /requests — список: фільтри + пошук + пагінація (PAGES.md §4.2). */
@@ -248,6 +243,9 @@ export async function create(req: Request, res: Response) {
         errors.push("Email: до 320 символів");
       } else if (!isEmail(newClientEmail)) {
         errors.push("Email: некоректний формат");
+      } else {
+        const dup = await prisma.client.findFirst({ where: { email: newClientEmail } });
+        if (dup) errors.push("Email вже використовується іншим клієнтом");
       }
     }
 
@@ -367,51 +365,61 @@ export async function create(req: Request, res: Response) {
     return;
   }
 
-  const admin = await adminUser();
-  const created = await prisma.$transaction(async (tx) => {
-    let cid = clientId as string;
-    if (clientMode === "new") {
-      const c = await tx.client.create({
+  let created: { id: string };
+  try {
+    created = await prisma.$transaction(async (tx) => {
+      let cid = clientId as string;
+      if (clientMode === "new") {
+        const c = await tx.client.create({
+          data: {
+            name: newClientName,
+            phone: newClientPhone,
+            email: newClientEmail || null,
+            address: newClientAddress || null,
+          },
+        });
+        cid = c.id;
+      }
+      let did = deviceId as string;
+      if (deviceMode === "new") {
+        const d = await tx.device.create({
+          data: {
+            type: newDeviceType as DeviceType,
+            brand: newDeviceBrand,
+            model: newDeviceModel,
+            serialNumber: newDeviceSerial || null,
+            specs: newDeviceSpecs || null,
+            purchasedAt: parseDateOnly(newDevicePurchasedAt),
+            ownerId: cid,
+          },
+        });
+        did = d.id;
+      }
+      const number = await nextNumberIn(tx);
+      return tx.request.create({
         data: {
-          name: newClientName,
-          phone: newClientPhone,
-          email: newClientEmail || null,
-          address: newClientAddress || null,
+          number,
+          type: type as (typeof REQUEST_TYPES)[number],
+          status: "NEW",
+          priority: priority as (typeof PRIORITIES)[number],
+          description,
+          clientId: cid,
+          deviceId: did,
+          originalRequestId: originalId,
+          assignedToId: technicianIdFinal,
+          createdById: req.user!.id,
         },
       });
-      cid = c.id;
-    }
-    let did = deviceId as string;
-    if (deviceMode === "new") {
-      const d = await tx.device.create({
-        data: {
-          type: newDeviceType as DeviceType,
-          brand: newDeviceBrand,
-          model: newDeviceModel,
-          serialNumber: newDeviceSerial || null,
-          specs: newDeviceSpecs || null,
-          purchasedAt: parseDateOnly(newDevicePurchasedAt),
-          ownerId: cid,
-        },
-      });
-      did = d.id;
-    }
-    const number = await nextNumberIn(tx);
-    return tx.request.create({
-      data: {
-        number,
-        type: type as (typeof REQUEST_TYPES)[number],
-        status: "NEW",
-        priority: priority as (typeof PRIORITIES)[number],
-        description,
-        clientId: cid,
-        deviceId: did,
-        originalRequestId: originalId,
-        assignedToId: technicianIdFinal,
-        createdById: admin.id,
-      },
     });
-  });
+  } catch (err) {
+    if (isUniqueViolation(err)) {
+      errors.push("Конфлікт даних: email або номер заявки вже зайнято — спробуйте ще раз");
+      const ref = await referenceData();
+      res.status(400).render("requests/create", { nav: "requests", errors, values, ...ref, ...commonLocals });
+      return;
+    }
+    throw err;
+  }
 
   res.redirect(`/requests/${created.id}`);
 }
@@ -481,7 +489,13 @@ export async function transition(req: Request, res: Response) {
 
   const to = String(req.body?.status ?? "");
   if (!canTransition(r.status, to)) {
-    res.redirect(`/requests/${id}?error=transition`);
+    const data = await showData(id);
+    if (!data) {
+      res.status(404).render("errors/404", { nav: "none" });
+      return;
+    }
+    res.status(400);
+    renderShow(res, data, { errors: ["Недозволений перехід статусів"] });
     return;
   }
 
@@ -742,8 +756,8 @@ export async function addWork(req: Request, res: Response) {
   if (hours.error) errors.push(hours.error);
 
   if (errors.length > 0) {
-    renderShow(res, data, { errors, addWorkValues });
     res.status(400);
+    renderShow(res, data, { errors, addWorkValues });
     return;
   }
 
@@ -811,8 +825,8 @@ export async function addPart(req: Request, res: Response) {
   if (price.error) errors.push(price.error);
 
   if (errors.length > 0) {
-    renderShow(res, data, { errors, addPartValues });
     res.status(400);
+    renderShow(res, data, { errors, addPartValues });
     return;
   }
 
@@ -822,8 +836,8 @@ export async function addPart(req: Request, res: Response) {
     });
   } catch (err) {
     if (isUniqueViolation(err)) {
-      renderShow(res, data, { errors: ["Ця запчастина вже додана в заявку"], addPartValues });
       res.status(400);
+      renderShow(res, data, { errors: ["Ця запчастина вже додана в заявку"], addPartValues });
       return;
     }
     throw err;
@@ -902,25 +916,25 @@ export async function saveDiagnostics(req: Request, res: Response) {
   }
 
   if (errors.length > 0) {
+    res.status(400);
     renderShow(res, data, {
       errors,
       diagValues: { technicianId: techRaw, date: dateRaw, findings, cost: String(b.cost ?? "").trim(), notes: notes ?? "" },
     });
-    res.status(400);
     return;
   }
 
   await prisma.diagnostics.upsert({
     where: { requestId: id },
-    update: { technicianId, date: date ?? TODAY, findings, cost: cost.value, notes },
-    create: { requestId: id, technicianId, date: date ?? TODAY, findings, cost: cost.value, notes },
+    update: { technicianId, date: date ?? today(), findings, cost: cost.value, notes },
+    create: { requestId: id, technicianId, date: date ?? today(), findings, cost: cost.value, notes },
   });
   res.redirect(`/requests/${id}`);
 }
 
 /** POST /requests/:id/estimate — створити/оновити оцінку з сум робіт і запчастин. */
-export async function saveEstimate(_req: Request, res: Response) {
-  const id = String(_req.params.id ?? "");
+export async function saveEstimate(req: Request, res: Response) {
+  const id = String(req.params.id ?? "");
   const data = await showData(id);
   if (!data) {
     res.status(404).render("errors/404", { nav: "none" });
@@ -928,24 +942,23 @@ export async function saveEstimate(_req: Request, res: Response) {
   }
   const r = data.r;
   if (r.estimate && r.estimate.status === "APPROVED") {
-    renderShow(res, data, { errors: ["Оцінку вже затверджено — змініть роботи/запчастини та оновіть оцінку"] });
     res.status(400);
+    renderShow(res, data, { errors: ["Оцінку вже затверджено — змініть роботи/запчастини та оновіть оцінку"] });
     return;
   }
   if (r.works.length === 0 && r.parts.length === 0) {
-    renderShow(res, data, { errors: ["Додайте роботи або запчастини, щоб оформити оцінку"] });
     res.status(400);
+    renderShow(res, data, { errors: ["Додайте роботи або запчастини, щоб оформити оцінку"] });
     return;
   }
 
   const totalWorks = round2(r.works.reduce((s, w) => s + Number(w.cost), 0));
   const totalParts = round2(r.parts.reduce((s, p) => s + p.quantity * Number(p.unitPrice), 0));
   const total = round2(totalWorks + totalParts);
-  const admin = await adminUser();
   await prisma.estimate.upsert({
     where: { requestId: id },
     update: { status: "DRAFT", totalWorks, totalParts, total, approvedAt: null },
-    create: { requestId: id, status: "DRAFT", totalWorks, totalParts, total, createdById: admin.id },
+    create: { requestId: id, status: "DRAFT", totalWorks, totalParts, total, createdById: req.user!.id },
   });
   res.redirect(`/requests/${id}`);
 }
@@ -960,13 +973,13 @@ export async function approveEstimate(req: Request, res: Response) {
   }
   const est = data.r.estimate;
   if (!est) {
-    renderShow(res, data, { errors: ["Оцінки ще немає — оформіть її спершу"] });
     res.status(400);
+    renderShow(res, data, { errors: ["Оцінки ще немає — оформіть її спершу"] });
     return;
   }
   if (est.status === "APPROVED") {
-    renderShow(res, data, { errors: ["Оцінку вже затверджено"] });
     res.status(400);
+    renderShow(res, data, { errors: ["Оцінку вже затверджено"] });
     return;
   }
   await prisma.estimate.update({
@@ -986,13 +999,13 @@ export async function rejectEstimate(req: Request, res: Response) {
   }
   const est = data.r.estimate;
   if (!est) {
-    renderShow(res, data, { errors: ["Оцінки ще немає — оформіть її спершу"] });
     res.status(400);
+    renderShow(res, data, { errors: ["Оцінки ще немає — оформіть її спершу"] });
     return;
   }
   if (est.status === "REJECTED") {
-    renderShow(res, data, { errors: ["Оцінку вже відхилено"] });
     res.status(400);
+    renderShow(res, data, { errors: ["Оцінку вже відхилено"] });
     return;
   }
   await prisma.estimate.update({
@@ -1032,20 +1045,23 @@ export async function createInvoice(req: Request, res: Response) {
   }
 
   if (errors.length > 0) {
-    renderShow(res, data, { errors });
     res.status(400);
+    renderShow(res, data, { errors });
     return;
   }
 
   const estTotal = Number(est!.total);
+  const finalTotal = round2(estTotal - discount);
   await prisma.invoice.create({
     data: {
       requestId: id,
       estimateId: est!.id,
       total: estTotal,
       discount,
-      finalTotal: round2(estTotal - discount),
-      status: "UNPAID",
+      finalTotal,
+      // Повна знижка — рахунок на 0 грн одразу закритий, інакше його
+      // неможливо було б «оплатити» (залишок 0).
+      status: finalTotal <= 0 ? "PAID" : "UNPAID",
       issueDate: new Date(),
       dueDate,
     },
@@ -1082,18 +1098,20 @@ export async function addPayment(req: Request, res: Response) {
   }
 
   if (errors.length > 0) {
-    renderShow(res, data, { errors });
     res.status(400);
+    renderShow(res, data, { errors });
     return;
   }
 
-  await prisma.payment.create({
-    data: { invoiceId: inv!.id, amount: amount.value, method: method as (typeof PAYMENT_METHODS)[number], note },
-  });
-  await prisma.invoice.update({
-    where: { id: inv!.id },
-    data: { status: amount.value >= remaining ? "PAID" : "PARTIAL" },
-  });
+  await prisma.$transaction([
+    prisma.payment.create({
+      data: { invoiceId: inv!.id, amount: amount.value, method: method as (typeof PAYMENT_METHODS)[number], note },
+    }),
+    prisma.invoice.update({
+      where: { id: inv!.id },
+      data: { status: amount.value >= remaining ? "PAID" : "PARTIAL" },
+    }),
+  ]);
   res.redirect(`/requests/${id}`);
 }
 
@@ -1119,12 +1137,12 @@ export async function saveWarranty(req: Request, res: Response) {
   const scope = String(b.scope ?? "").trim() || null;
 
   if (errors.length > 0) {
-    renderShow(res, data, { errors });
     res.status(400);
+    renderShow(res, data, { errors });
     return;
   }
 
-  startDate = startDate ?? TODAY;
+  startDate = startDate ?? today();
   const endDate = new Date(startDate.getTime() + periodDays * 86400000);
   await prisma.warranty.upsert({
     where: { requestId: id },
@@ -1147,17 +1165,16 @@ export async function addComment(req: Request, res: Response) {
   const text = String(b.text ?? "").trim();
   const errors: string[] = [];
   if (text.length < 2) errors.push("Коментар: мінімум 2 символи");
-  const isInternal = b.isInternal === "on" || b.isInternal === "true" || b.isInternal === "1";
+  const isInternal = b.isInternal === true || b.isInternal === "on" || b.isInternal === "true" || b.isInternal === "1";
 
   if (errors.length > 0) {
-    renderShow(res, data, { errors });
     res.status(400);
+    renderShow(res, data, { errors });
     return;
   }
 
-  const author = await adminUser();
   await prisma.comment.create({
-    data: { requestId: id, authorId: author.id, text, isInternal },
+    data: { requestId: id, authorId: req.user!.id, text, isInternal },
   });
   res.redirect(`/requests/${id}`);
 }
@@ -1179,7 +1196,6 @@ export async function addAttachment(req: Request, res: Response) {
 
   try {
     const saved = await saveFirstFile(req, id);
-    const author = await adminUser();
     await prisma.fileAttachment.create({
       data: {
         requestId: id,
@@ -1187,7 +1203,7 @@ export async function addAttachment(req: Request, res: Response) {
         filePath: saved.relPath,
         mimeType: saved.mimeType || null,
         size: saved.size,
-        uploadedById: author.id,
+        uploadedById: req.user!.id,
       },
     });
     res.redirect(`/requests/${id}`);
@@ -1198,8 +1214,8 @@ export async function addAttachment(req: Request, res: Response) {
         : err instanceof Error && err.message === "UPLOAD:NONE"
           ? "Оберіть файл для завантаження"
           : "Не вдалося зберегти файл";
-    renderShow(res, data, { errors: [msg] });
     res.status(400);
+    renderShow(res, data, { errors: [msg] });
   }
 }
 

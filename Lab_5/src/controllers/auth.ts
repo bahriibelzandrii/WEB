@@ -106,7 +106,7 @@ export async function registerPost(req: Request, res: Response, next: NextFuncti
         name: values.name,
         email: values.email,
         phone: values.phone === "" ? null : values.phone,
-        password: bcrypt.hashSync(values.password, 10),
+        password: await bcrypt.hash(values.password, 10),
         role: "VISITOR",
       },
     })
