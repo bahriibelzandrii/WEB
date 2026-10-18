@@ -9,13 +9,10 @@ import { clean, isEmail, isPhone, isUaPhone, isUniqueViolation, tooLong } from "
 const RECENT = 10;
 
 /**
- * Особистий кабінет (Lab 4): профіль, зміна пароля, лічильники за статусами
- * та недавні заявки.
- *
- * «Свої» заявки залежно від ролі:
- *   КЛІЄНТ      — клієнтські замовлення акаунта (Client.userId = user)
- *   МАЙСТЕР     — призначені йому (assignedToId = user)
- *   АДМІН/ВІДВІДУВАЧ — всі
+ * Особистий кабінет (Lab 4): профіль, зміна пароля.
+ * Лічильники за статусами та недавні заявки — лише для КЛІЄНТА
+ * (його замовлення: Client.userId = user); для персоналу кабінет —
+ * тільки профіль і пароль.
  */
 function scopeFor(role: string, userId: string): Record<string, unknown> {
   if (role === "CLIENT") return { client: { userId } };
@@ -26,6 +23,9 @@ function scopeFor(role: string, userId: string): Record<string, unknown> {
 async function cabinetLocals(userId: string) {
   const user = await prisma.user.findUnique({ where: { id: userId } });
   if (!user) return null;
+  if (user.role !== "CLIENT") {
+    return { user, scope: {} as Record<string, unknown>, byStatus: [], recent: [] };
+  }
   const scope = scopeFor(user.role, user.id);
   const [byStatus, recent] = await Promise.all([
     prisma.request.groupBy({

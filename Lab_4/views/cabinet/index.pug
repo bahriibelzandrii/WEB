@@ -8,7 +8,7 @@ block content
   -
     const counts = {};
     for (const row of byStatus) counts[row.status] = row._count;
-    const myLabel = user.role === "CLIENT" ? "Мої замовлення" : "Мої заявки";
+    const myLabel = "Мої замовлення";
   .page-head
     h1 Особистий кабінет
     .meta
@@ -48,41 +48,42 @@ block content
         .form-actions
           button.btn.btn-primary(type="submit") Змінити пароль
 
-  .block
-    h2= myLabel
-    .cards
-      each s in statuses
-        .card
-          .card-value= counts[s] || 0
-          .card-label= statusLabels[s]
+  if user.role === "CLIENT"
+    .block
+      h2= myLabel
+      .cards
+        each s in statuses
+          .card
+            .card-value= counts[s] || 0
+            .card-label= statusLabels[s]
 
-  .block
-    h2 Останні
-    table.table
-      thead
-        tr
-          th Номер
-          th Клієнт
-          th Пристрій
-          th Статус
-          if user.role === "CLIENT"
-            th До сплати
-          th Дата
-      tbody
-        each it in recent
+    .block
+      h2 Останні
+      table.table
+        thead
           tr
-            td
-              a(href="/requests/" + it.id)= it.number
-            td= it.client.name
-            td= it.device.brand + " " + it.device.model
-            td
-              .badge(class="badge-status-" + it.status.toLowerCase())= statusLabels[it.status]
+            th Номер
+            th Клієнт
+            th Пристрій
+            th Статус
             if user.role === "CLIENT"
-              td.align-right
-                if it.invoice
-                  = uah(it.invoice.finalTotal)
-                else
-                  = "—"
-            td= dateOnly(it.createdAt)
-    if recent.length === 0
-      p.empty Нічого не знайдено.
+              th До сплати
+            th Дата
+        tbody
+          each it in recent
+            tr
+              td
+                a(href="/requests/" + it.id)= it.number
+              td= it.client.name
+              td= it.device.brand + " " + it.device.model
+              td
+                .badge(class="badge-status-" + it.status.toLowerCase())= statusLabels[it.status]
+              if user.role === "CLIENT"
+                td.align-right
+                  if it.invoice
+                    = uah(it.invoice.finalTotal)
+                  else
+                    = "—"
+              td= dateOnly(it.createdAt)
+      if recent.length === 0
+        p.empty Нічого не знайдено.
