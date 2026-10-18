@@ -25,12 +25,12 @@ const prisma = new PrismaClient({ adapter });
 
 // --------------------------- Справочники ---------------------------
 
-// bcrypt("secret", 10) — демонстраційний пароль усього персоналу (Lab 4, README)
-const BCRYPT_HASH = "$2b$10$cPgQ3oHXll8gUieZ4e3hp.ZVQUiGwX8a/NGaEsCvJeqPKHp8uXVLq";
+// bcrypt("Secret123", 10) — демонстраційний пароль усіх демо-акаунтів (персонал + клієнт)
+const BCRYPT_HASH = "$2b$10$atY1NVqFhoVscvSIU1pcJefmyVWn4QiP26dDGHa2OW5pY/vJQAjfa";
 
 const USERS = [
  { name: "Адміністратор Системи", email: "admin@service.ua", role: "ADMIN" as const, phone: "+380441000001" },
- { name: "Олена Коваленко", email: "manager@service.ua", role: "MANAGER" as const, phone: "+380441000002" },
+ { name: "Петро Шевченко", email: "client@service.ua", role: "CLIENT" as const, phone: "+380671234501" },
  { name: "Ігор Мельник", email: "tech1@service.ua", role: "TECHNICIAN" as const, phone: "+380441000003" },
  { name: "Сергій Бондар", email: "tech2@service.ua", role: "TECHNICIAN" as const, phone: "+380441000004" },
  { name: "Відвідувач Сервісу", email: "visitor@service.ua", role: "VISITOR" as const, phone: "+380441000005" },
@@ -119,7 +119,7 @@ interface RequestSeed {
 
 const HAND_REQUESTS: RequestSeed[] = [
  {
-  type: "WARRANTY_CLAIM", status: "NEW", priority: "NORMAL", clientIdx: 7, deviceIdx: 7, originalIdx: 12,
+  type: "WARRANTY_CLAIM", status: "NEW", priority: "NORMAL", clientIdx: 0, deviceIdx: 7, originalIdx: 12,
   description: "Знову не тримає заряд після гарантійного ремонту",
   createdAt: "2026-09-02T10:00:00Z", assignedTechIdx: 0,
   works: [], parts: [],
@@ -657,13 +657,16 @@ async function main() {
    prisma.user.create({ data: { ...u, password: BCRYPT_HASH } })
   )
  );
- const [admin, manager, tech1, tech2] = users;
+ const [admin, client, tech1, tech2] = users;
  const techs = [tech1, tech2];
 
  console.log("Клієнти...");
  const clients = await Promise.all(
-  ALL_CLIENTS.map((c) =>
-   prisma.client.create({ data: { name: c.name, phone: c.phone, email: c.email, address: c.address } })
+  ALL_CLIENTS.map((c, i) =>
+   prisma.client.create({
+    // clients[0] (Петро Шевченко) — власник акаунта client@service.ua (демо-клієнт)
+    data: { name: c.name, phone: c.phone, email: c.email, address: c.address, ...(i === 0 ? { userId: client.id } : {}) },
+   })
   )
  );
 
@@ -709,7 +712,7 @@ async function main() {
     description: r.description,
     client: { connect: { id: clients[r.clientIdx].id } },
     device: { connect: { id: devices[r.deviceIdx].id } },
-    createdBy: { connect: { id: manager.id } },
+    createdBy: { connect: { id: admin.id } },
     createdAt: new Date(r.createdAt),
     works: {
      create: r.works.map((w) => ({
@@ -761,7 +764,7 @@ async function main() {
     totalWorks,
     totalParts,
     total: totalWorks + totalParts,
-    createdBy: { connect: { id: manager.id } },
+    createdBy: { connect: { id: admin.id } },
     approvedAt: e.approvedAt ? new Date(e.approvedAt) : null,
    },
   });

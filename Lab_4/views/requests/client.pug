@@ -1,0 +1,93 @@
+extends ../layout
+
+block title
+  title= r.number + " — Мої замовлення"
+
+mixin section(title)
+  section.block
+    h2= title
+    block
+
+block content
+  .page-head
+    .page-head-top
+      h1= r.number
+      a.btn(href="/requests/my-orders") ← Мої замовлення
+    .badges
+      .badge(class="badge-status-" + r.status.toLowerCase())= statusLabels[r.status]
+      .badge= typeLabels[r.type]
+      .badge(class="badge-priority-" + r.priority.toLowerCase())= priorityLabels[r.priority]
+    .meta
+      span Звернення: #{dateTime(r.createdAt)}
+      if r.warranty
+        span Гарантія до: #{dateOnly(r.warranty.endDate)}
+
+  +section("Опис")
+    p.description= r.description || "—"
+
+  +section("Пристрій")
+    p
+      strong= r.device.brand + " " + r.device.model
+      |  ·  #{deviceTypeLabels[r.device.type]}
+      if r.device.serialNumber
+        |  ·  серійний № #{r.device.serialNumber}
+
+  +section("Діагностика")
+    if r.diagnostics
+      table.table
+        tbody
+          tr
+            th Дата
+            td= dateOnly(r.diagnostics.date)
+          tr
+            th Висновки
+            td= r.diagnostics.findings
+          if r.diagnostics.cost > 0
+            tr
+              th Вартість
+              td.align-right= uah(r.diagnostics.cost)
+    else
+      p.empty Діагностику ще не виконано.
+
+  +section("Оцінка та рахунок")
+    if r.invoice
+      table.table
+        tbody
+          if r.estimate
+            tr
+              th Оцінка
+              td.align-right= uah(r.estimate.total)
+          if r.invoice.discount > 0
+            tr
+              th Знижка
+              td.align-right= uah(r.invoice.discount)
+          tr
+            th До сплати (разом)
+            td.align-right.strong= uah(r.invoice.finalTotal)
+          tr
+            th Статус оплати
+            td
+              .badge= invoiceStatusLabels[r.invoice.status]
+          if r.invoice.dueDate
+            tr
+              th Термін оплати
+              td= dateOnly(r.invoice.dueDate)
+          tr
+            th Оплачено
+            td.align-right= uah(r.invoice.payments.reduce((s, p) => s + Number(p.amount), 0))
+    else if r.estimate
+      p
+        | Оцінка #{r.estimate.status === "APPROVED" ? "затверджена" : "складена"}, чекає на видання рахунку.
+        |  Разом:
+        strong= uah(r.estimate.total)
+    else
+      p.empty Оцінки ще немає — вона з'явиться після діагностики.
+
+  if r.warranty
+    +section("Гарантія")
+      p
+        | Період: #{dateOnly(r.warranty.startDate)} — #{dateOnly(r.warranty.endDate)}
+        |  (#{r.warranty.periodDays} дн.)
+        if r.warranty.scope
+          br
+          |  #{r.warranty.scope}

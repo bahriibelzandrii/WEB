@@ -21,7 +21,7 @@
 
 | Enum | Значення | Призначення |
 |---|---|---|
-| `Role` | `ADMIN`, `MANAGER`, `TECHNICIAN` | ролі співробітників |
+| `Role` | `ADMIN`, `TECHNICIAN`, `CLIENT`, `VISITOR` | ролі користувачів (Lab 4: `MANAGER` → `CLIENT`, додано `VISITOR`) |
 | `DeviceType` | `PC`, `LAPTOP`, `MONITOR`, `PHONE`, `TABLET`, `PRINTER`, `OTHER` | типи техніки |
 | `RequestStatus` | `NEW`, `IN_DIAGNOSTICS`, `ESTIMATE_READY`, `IN_REPAIR`, `READY`, `COMPLETED`, `CANCELED` | життєвий цикл заявки |
 | `RequestType` | `REPAIR`, `MAINTENANCE`, `WARRANTY_CLAIM` | ремонт / обслуговування / гарантійне звернення |
@@ -35,7 +35,7 @@
 
 ## Сутності (15)
 
-### 1. User — співробітник сервісу
+### 1. User — користувач (персонал, клієнт, відвідувач)
 
 | Поле | Тип | Обмеження | Опис |
 |---|---|---|---|
@@ -44,7 +44,7 @@
 | email | String | NOT NULL, UNIQUE | логін |
 | password | String | NOT NULL | bcrypt-хеш |
 | phone | String | NULL | |
-| role | Role | NOT NULL, default `MANAGER` | |
+| role | Role | NOT NULL, default `CLIENT` | |
 | createdAt / updatedAt | DateTime | NOT NULL | аудит |
 
 **Зв'язки:** створює `Request` (createdBy), призначений на `Request` (assignedTo),
@@ -61,10 +61,11 @@
 | email | String | NULL, UNIQUE | |
 | address | String | NULL | |
 | notes | String | NULL | |
+| userId | String | NULL, UNIQUE, FK→User, `ON DELETE SET NULL` | Lab 4: акаунт власника («мої замовлення») |
 | createdAt / updatedAt | DateTime | NOT NULL | |
 | deletedAt | DateTime | NULL | soft delete |
 
-**Зв'язки:** володіє `Device` (1—N), має `Request` (1—N).
+**Зв'язки:** володіє `Device` (1—N), має `Request` (1—N), необов'язково має акаунт `User` (1—0..1, Lab 4).
 
 ### 3. Device — конкретний прилад клієнта
 
@@ -96,7 +97,7 @@
 | clientId | String | NOT NULL, FK→Client, index | |
 | deviceId | String | NOT NULL, FK→Device, index | **одна заявка = один прилад** |
 | originalRequestId | String | NULL, FK→Request (self) | для `WARRANTY_CLAIM`: на який ремонт скаржимося |
-| createdById | String | NOT NULL, FK→User | менеджер, який прийняв |
+| createdById | String | NOT NULL, FK→User | автор заявки |
 | assignedToId | String | NULL, FK→User | головний майстер |
 | createdAt / updatedAt | DateTime | NOT NULL | |
 | deletedAt | DateTime | NULL | soft delete |
@@ -320,7 +321,7 @@ NEW ──▶ IN_DIAGNOSTICS ──▶ ESTIMATE_READY ──▶ IN_REPAIR ──
 
 | Сутність | Кількість | Примітки |
 |---|---|---|
-| User | 4 | 1 admin, 1 manager, 2 technician |
+| User | 5 | 1 admin, 1 client, 2 technician, 1 visitor (пароль `Secret123`) |
 | Client | 30 | 8 «ручних» (фізособи + компанії) + 22 згенерованих |
 | Device | 45 | 12 «ручних» + 33 згенерованих; усі 7 типів DeviceType, у кожного — власник |
 | WorkCatalog | 14 | діагностика, чистка від пилу, заміна термопасты, збірка ПК, встановлення ОС, заміна SSD/RAM, діагностика живлення тощо |

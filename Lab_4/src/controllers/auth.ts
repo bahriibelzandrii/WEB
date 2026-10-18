@@ -3,6 +3,7 @@ import passport from "passport";
 import bcrypt from "bcryptjs";
 import prisma from "../prisma.js";
 import { clean, isEmail, isPhone, isUaPhone, isUniqueViolation, tooLong } from "../lib/validate.js";
+import { homeFor } from "../lib/auth.js";
 
 /**
  * Авторизація (Lab 4): /login, /logout, /register.
@@ -19,9 +20,10 @@ function safeNext(v: unknown): string {
   return s.replace(/\/\/+/, "/");
 }
 
+
 /** GET /login — форма входу. */
 export async function loginForm(req: Request, res: Response) {
-  if (req.user) return res.redirect("/");
+  if (req.user) return res.redirect(homeFor(req.user));
   const next = safeNext(clean(req.query.next));
   return res.render("auth/login", {
     nav: "none",
@@ -45,7 +47,8 @@ export function loginPost(req: Request, res: Response, next: NextFunction) {
     }
     req.login(user, (e) => {
       if (e) return next(e);
-      return res.redirect(safeNext(req.body.next));
+      const nextRaw = clean(req.body.next);
+      return res.redirect(nextRaw ? safeNext(nextRaw) : homeFor(user));
     });
   })(req, res, next);
 }
@@ -65,7 +68,7 @@ export function logout(req: Request, res: Response, next: NextFunction) {
 
 /** GET /register — форма реєстрації (роль відвідувача). */
 export async function registerForm(req: Request, res: Response) {
-  if (req.user) return res.redirect("/");
+  if (req.user) return res.redirect(homeFor(req.user));
   return res.render("auth/register", { nav: "none" });
 }
 
@@ -126,7 +129,7 @@ export async function registerPost(req: Request, res: Response, next: NextFuncti
     { id: user.id, name: user.name, email: user.email, role: user.role },
     (e) => {
       if (e) return next(e);
-      return res.redirect("/");
+      return res.redirect(homeFor({ id: user.id, name: user.name, email: user.email, role: user.role } as Express.User));
     },
   );
 }

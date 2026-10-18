@@ -1,12 +1,21 @@
 header.site-header
   .container.nav
-    a.brand(href="/") Сервіс ремонту техніки
-    a(href="/" class=(nav === "home" ? "active" : "")) Головна
-    a(href="/requests" class=(nav === "requests" ? "active" : "")) Заявки
-    a(href="/clients" class=(nav === "clients" ? "active" : "")) Клієнти
-    a(href="/devices" class=(nav === "devices" ? "active" : "")) Пристрої
-    a(href="/works" class=(nav === "works" ? "active" : "")) Роботи
-    a(href="/parts" class=(nav === "parts" ? "active" : "")) Запчастини
+    if user && user.role === "CLIENT"
+      a.brand(href="/requests/my-orders") Сервіс ремонту техніки
+      a(href="/requests/my-orders" class=(nav === "my-orders" ? "active" : "")) Мої замовлення
+      a(href="/cabinet" class=(nav === "cabinet" ? "active" : "")) Кабінет
+    else if user
+      a.brand(href="/dashboard") Сервіс ремонту техніки
+      a(href="/dashboard" class=(nav === "home" ? "active" : "")) Головна
+      a(href="/requests" class=(nav === "requests" ? "active" : "")) Заявки
+      a(href="/clients" class=(nav === "clients" ? "active" : "")) Клієнти
+      a(href="/devices" class=(nav === "devices" ? "active" : "")) Пристрої
+      a(href="/works" class=(nav === "works" ? "active" : "")) Роботи
+      a(href="/parts" class=(nav === "parts" ? "active" : "")) Запчастини
+      a(href="/cabinet" class=(nav === "cabinet" ? "active" : "")) Кабінет
+    else
+      a.brand(href="/") Сервіс ремонту техніки
+      a(href="/" class=(nav === "landing" ? "active" : "")) Головна
     .nav-user
       if user
         span.user-chip
@@ -15,3 +24,4 @@ header.site-header
         a(href="/logout") Вийти
       else
         a(href="/login") Вхід
+        a.btn.btn-small.btn-primary(href="/register") Реєструватись

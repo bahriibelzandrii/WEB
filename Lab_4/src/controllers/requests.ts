@@ -121,6 +121,8 @@ export async function index(req: Request, res: Response) {
   const page = parsePage(req.query.page);
 
   const where: Record<string, unknown> = { deletedAt: null };
+  // Lab 4: майстер бачить у списку лише призначені собі заявки (адмін/відвідувач — всі).
+  if (req.user?.role === "TECHNICIAN") where.assignedToId = req.user.id;
   if (status && (REQUEST_STATUSES as readonly string[]).includes(status)) where.status = status;
   if (type && (REQUEST_TYPES as readonly string[]).includes(type)) where.type = type;
   if (priority && (PRIORITIES as readonly string[]).includes(priority)) where.priority = priority;
@@ -165,6 +167,36 @@ export async function index(req: Request, res: Response) {
     type,
     priority,
     q,
+    ...commonLocals,
+  });
+}
+
+/** GET /requests/my-orders — замовлення клієнта (Client.userId = акаунт). */
+export async function myOrders(req: Request, res: Response) {
+  const page = parsePage(req.query.page);
+  const where: Record<string, unknown> = { deletedAt: null, client: { userId: req.user!.id } };
+
+  const total = await prisma.request.count({ where });
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const cur = Math.min(page, totalPages);
+  const items = await prisma.request.findMany({
+    where,
+    include: { client: true, device: true },
+    orderBy: { createdAt: "desc" },
+    skip: (cur - 1) * PAGE_SIZE,
+    take: PAGE_SIZE,
+  });
+
+  res.render("requests/mine", {
+    nav: "my-orders",
+    items,
+    total,
+    page: cur,
+    totalPages,
+    pageNumbers: pageNumbers(cur, totalPages),
+    base: "/requests/my-orders?",
+    shownFrom: total === 0 ? 0 : (cur - 1) * PAGE_SIZE + 1,
+    shownTo: Math.min(total, cur * PAGE_SIZE),
     ...commonLocals,
   });
 }
@@ -337,6 +369,9 @@ export async function create(req: Request, res: Response) {
     else technicianIdFinal = t.id;
   }
 
+  if (!technicianIdFinal && req.user?.role === "TECHNICIAN") {
+    technicianIdFinal = req.user.id; // заявка майстра одразу призначається йому
+  }
   const values = {
     type,
     priority,
@@ -464,6 +499,23 @@ export async function show(req: Request, res: Response) {
   const data = await showData(id);
   if (!data) {
     res.status(404).render("errors/404", { nav: "none" });
+    return;
+  }
+
+  // Lab 4: клієнт — тільки свої замовлення, скорочена картка (статус + фінанси).
+  if (req.user?.role === "CLIENT") {
+    if (data.r.client.userId !== req.user.id) {
+      res.status(403).render("errors/403", { nav: "none", requiredRoles: "Клієнт (тільки свої замовлення)" });
+      return;
+    }
+    res.render("requests/client", {
+      nav: "my-orders",
+      ...data,
+      next: [],
+      addWorkValues: null,
+      addPartValues: null,
+      ...commonLocals,
+    });
     return;
   }
 

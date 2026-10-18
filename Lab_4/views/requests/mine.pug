@@ -1,0 +1,40 @@
+extends ../layout
+
+block title
+  title Мої замовлення — Сервіс ремонту техніки
+
+block content
+  .page-head
+    h1 Мої замовлення
+    .meta
+      span= "Всього: " + total
+  table.table
+    thead
+      tr
+        th Номер
+        th Пристрій
+        th Тип
+        th Статус
+        th Дата
+        th
+    tbody
+      each it in items
+        tr
+          td
+            a(href="/requests/" + it.id)= it.number
+          td= it.device.brand + " " + it.device.model
+          td= typeLabels[it.type]
+          td
+            .badge(class="badge-status-" + it.status.toLowerCase())= statusLabels[it.status]
+          td= dateOnly(it.createdAt)
+          td.act
+            a.btn.btn-small(href="/requests/" + it.id) Відкрити
+  if items.length === 0
+    p.empty
+      | У вас поки немає замовлень.
+  if totalPages > 1
+    .pagination
+      each n in pageNumbers
+        a.pagination-a(href=base + "page=" + n, class=(n === page ? "current" : ""))= n
+      .pagination-info
+        | Показано #{shownFrom}–#{shownTo} з #{total}

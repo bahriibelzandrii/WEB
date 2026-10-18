@@ -5,13 +5,16 @@
  * express-session. Сесія зберігає лише id користувача; ролі читаються з БД
  * при кожному deserializ'ації, тому зміна ролі в адмінці діє негайно.
  *
- * Матриця дозволів (однакова для Web; у Lab 6 — і для API):
+ * Матриця дозволів (однакова для Web):
  *   ВІДВІДУВАЧ  — read-only: дашборд, заявки (перегляд), каталоги
- *   МАЙСТЕР     — + статус заявок, роботи/запчастини в заявках, діагностика,
- *                 коментарі, файли
- *   МЕНЕДЖЕР    — + заявки (повний), клієнти, пристрої, оцінки, рахунки,
- *                 оплати, гарантії, каталоги робіт і запчастин
- *   АДМІНІСТРАТОР — + користувачі, решта
+ *   КЛІЄНТ      — тільки свої замовлення (Client.userId = акаунт): список
+ *                 «Мої замовлення» + скорочена картка (статус + фінанси)
+ *   МАЙСТЕР     — повна персоналська сила: каталоги, заявки, оцінки,
+ *                 рахунки, оплати, гарантії, діагностика, коментарі, файли;
+ *                 у списку заявок бачить лише призначені собі
+ *   АДМІНІСТРАТОР — усе, без фільтра «свої»
+ *
+ * Без входу доступні лише: лендінг «/», /login, /register, /health, /uploads.
  */
 import type { Express, NextFunction, Request, Response } from "express";
 import session from "express-session";
@@ -21,15 +24,20 @@ import bcrypt from "bcryptjs";
 import prisma from "../prisma.js";
 import { ROLE_LABELS } from "./labels.js";
 
-export type Role = "ADMIN" | "MANAGER" | "TECHNICIAN" | "VISITOR";
+export type Role = "ADMIN" | "TECHNICIAN" | "VISITOR" | "CLIENT";
 
-/** Тіри ролей для швидкого підключення захисту на маршрутах. */
+/** Комбінації ролей для швидкого підключення захисту на маршрутах. */
 export const ROLES = {
-  /** Майстер і вище (операції зі статусом/смігом заявок). */
-  TECH: ["ADMIN", "MANAGER", "TECHNICIAN"],
-  /** Менеджер і вище (довідники, фінанси). */
-  MANAGER: ["ADMIN", "MANAGER"],
+  /** Персонал: адмін + майстер (каталоги, заявки, фінанси, технічні дії). */
+  STAFF: ["ADMIN", "TECHNICIAN"],
+  /** Персонал + відвідувач (усі сторінки даних у режимі перегляду). */
+  VIEW: ["ADMIN", "TECHNICIAN", "VISITOR"],
 } as const;
+
+/** Домівка після входу/після логіну: клієнт — свої замовлення, решта — дашборд. */
+export function homeFor(user: Pick<Express.User, "role">): string {
+  return user.role === "CLIENT" ? "/requests/my-orders" : "/dashboard";
+}
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -147,4 +155,19 @@ export function requireRole(roles: readonly string[]) {
     }
     next();
   };
+}
+
+/**
+ * Глобальний захист: без входу доступні лише публічні шляхи
+ * (лендінг «/», авторизація, health, статика, uploads).
+ * Решта — редірект на /login?next=...
+ */
+const PUBLIC_PREFIXES = ["/login", "/register", "/health", "/uploads", "/css", "/js", "/favicon.ico"];
+
+export function guestGate(req: Request, res: Response, next: NextFunction) {
+  const p = req.path;
+  if (req.user || p === "/" || PUBLIC_PREFIXES.some((x) => p === x || p.startsWith(x + "/"))) {
+    return next();
+  }
+  return res.redirect(`/login?next=${encodeURIComponent(req.originalUrl)}`);
 }

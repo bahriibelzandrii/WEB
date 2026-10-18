@@ -91,7 +91,7 @@ WORK_STATUS: PENDING→«Очікує», IN_PROGRESS→«Виконується�
 ESTIMATE_STATUS: DRAFT→«Чорновик», APPROVED→«Затверджена», REJECTED→«Відхилена»
 INVOICE_STATUS: UNPAID→«Не сплачено», PARTIAL→«Частково», PAID→«Сплачено»
 PAYMENT_METHOD: CASH→«Готівка», CARD→«Картка», BANK_TRANSFER→«Банківський переказ»
-ROLE:       ADMIN→«Адміністратор», MANAGER→«Менеджер», TECHNICIAN→«Майстер»
+ROLE:       ADMIN→«Адміністратор», CLIENT→«Клієнт», TECHNICIAN→«Майстер», VISITOR→«Відвідувач»
 ```
 
 Кожен словник — `Record<EnumValue, string>` + типізована функція
@@ -218,8 +218,8 @@ prisma.request.findUnique({
 Не знайдено або `deletedAt ≠ null` → 404.
 
 **Розкладка (секції, D42 — інтерактивні форми прямо на картці):**
-1. **Шапка:** `h1` номер; бейджі статус/тип/пріоритет; мета: створено (дата, менеджер
-   `createdBy`), майстер `assignedTo` (або «не призначено»); кнопки:
+1. **Шапка:** `h1` номер; бейджі статус/тип/пріоритет; мета: створено (дата, автор
+   заявки `createdBy`), майстер `assignedTo` (або «не призначено»); кнопки:
    - «Редагувати» (primary) → `/requests/:id/edit`;
    - «Статус:» + по кнопці на кожен `nextStatuses(status)` → форма POST `/requests/:id/transition` (схований `status`);
    - «Видалити» (червона, `margin-left:auto`) → `GET /requests/:id/delete` (сторінка підтвердження).
@@ -556,3 +556,86 @@ D2). Hard delete каталогів — безпечний, бо snapshot'и з�
 виключає `uploads/` з контексту збірки.
 
 Усі правила валідації, секції картки та операції видалення повністю покриті автоматизованим E2E-тестом `scripts/lab3-e2e.sh` (186/186 перевірок; percent-encoding даних — argv-транскодування Git-Bash ламає raw UTF-8 в `curl -d`).
+
+---
+
+# Lab 4 — авторизація, ролі, кабінет
+
+Повний опис — `DECISIONS.md` D44–D62; тут — маршрути, дані, розкладка, поведінка.
+
+## L4-1. Механіка (`src/lib/auth.ts`)
+
+- **Passport** (локальна стратегія email+пароль) поверх **express-session**:
+  cookie `httpOnly`, `sameSite=lax`, 8 год; у сесії — лише `id` користувача,
+  роль читається з БД на кожному запиті.
+- `guestGate` (глобально, після initAuth): гостю доступні лише `/`,
+  `/login`, `/register`, `/health`, `/uploads/*`, `/uploads` та `/favicon*`;
+  решта — `302 /login?next=<shallow path>`.
+- `requireRole(roles)`: без ролі → `403` + `views/errors/403.pug`
+  (назва потрібної ролі через `ROLE_LABELS`).
+- `homeFor(user)`: CLIENT → `/requests/my-orders`, решта → `/dashboard`;
+  авторизований на `/` отримує редірект на `homeFor`.
+- Роут-мапа:
+
+| Метод | Шлях | Контролер | Хто |
+|---|---|---|---|
+| GET | `/` (лендінг) | `controllers/landing.ts` | гість |
+| GET/POST | `/login` | `controllers/auth.ts` | гість (авторизованому — редірект на домівку) |
+| GET | `/logout` | `controllers/auth.ts` | авторизовані |
+| GET/POST | `/register` | `controllers/auth.ts` | гість |
+| GET | `/requests/my-orders` | `controllers/requests.ts` `myOrders` | КЛІЄНТ |
+| GET | `/cabinet` | `controllers/cabinet.ts` | авторизовані |
+| POST | `/cabinet/profile` | `controllers/cabinet.ts` | авторизовані |
+| POST | `/cabinet/password` | `controllers/cabinet.ts` | авторизовані |
+
+## L4-2. Лендінг — `GET /` (гість)
+
+Статична pug (`views/landing.pug`), без БД: hero «Ремонт комп'ютерної техніки»,
+корисності (сервіс/ціни/гарантія), кнопки «Увійти» / «Зареєструватись».
+Авторизованому — редірект на `homeFor` (контролер не рендериться).
+
+## L4-3. Мої замовлення — `GET /requests/my-orders` (КЛІЄНТ)
+
+**Запит:** `findMany({ where: { deletedAt: null, client: { userId: user.id } },
+include: { device: { select: { brand, model } } }, orderBy: { createdAt: 'desc' } })`.
+**Розкладка:** таблиця `№ | Пристрій | Створено | Статус | → картка`; порожньо —
+«Замовлень поки немає». Чужа картка — 403 (перевірка в `show`).
+
+**Картка клієнта** (`views/requests/client.pug`): номер, бейджі статус/пріоритет,
+пристрій, опис, діагностика (висновок + майстер + дата), секція «Оцінка / Рахунок /
+Оплати» (суми, статуси, платежі) та «Гарантія». **Без** коментарів, робіт,
+запчастин, форм редагування, кнопок статусів — тільки статус і фінанси.
+
+## L4-4. Кабінет — `GET /cabinet` (авторизовані)
+
+Дві картки:
+1. **Профіль** — форма `name` (з значенням), `email`, `phone`;
+   `POST /cabinet/profile`: валідація — ім'я 2–100, email формат + унікальність
+   (крім власного, P2002 → «Email уже використовується»), телефон — порожній або
+   UA-формат `+380XXXXXXXXX`; успіх → 302 `/cabinet?saved=1` (банер), 400 →
+   повторна форма з банером.
+2. **Зміна пароля** — `currentPassword` (≥6), `newPassword` (≥8, 8–100),
+   `confirmPassword` (збіг); bcrypt-перевірка старого, хеш нового →
+   302 `/cabinet?saved=1`.
+
+Шапка (`partials/header.pug`) — role-залежна навігація: КЛІЄНТ бачить
+«Мої замовлення», персонал — «Заявки», у всіх — «Кабінет» + вихід.
+
+## L4-5. Технік: свої заявки (D60)
+
+`index` для TECHNICIAN: `where.assignedToId = user.id`; при створенні заявки
+техніком `assignedTo` автоматично = створювач (поле призначення з форми
+закрите для техніків). Адмін/відвідувач — повний список.
+
+## L4-6. Реєстрація
+
+`GET/POST /register`: `name` (2–100), `email` (формат, унікальність),
+`password` (≥8), `password2` (збіг). Роль завжди `VISITOR`. Успіх → автовхід →
+домівка. Форми входу/реєстрації **без атрибутів `required`** (D62) — валідація
+виключно серверна, патерн Lab 3 (400 + errors + збережені значення).
+
+## L4-7. Перевірка
+
+Автоматика: `scripts/lab4-smoke.ps1` — 69 перевірок (гостеві сценарії,
+всі 4 ролі, клієнтська зона, кабінет, реєстрація, 403-сторінка);
+ручний чек-лист — `docs/TEST_PLAN.md`.

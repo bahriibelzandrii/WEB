@@ -237,3 +237,62 @@
 - [x] `tsc --noEmit` → 0 помилок
 - [x] Документи оновлені: README, PAGES.md, DECISIONS (D30–D43), TEST_PLAN.md
 
+
+---
+
+# Lab 4 — авторизація, ролі, кабінет
+
+Автоматизація: `scripts/lab4-smoke.ps1` (curl + cookie-jars, 69 перевірок).
+Запуск на живому контейнері: `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/lab4-smoke.ps1`
+→ очікувано `SMOKE-DONE`, 0 `FAIL`.
+
+## L4.1. Гість та публічні маршрути
+
+- [x] `GET /` (гість) → 200, лендінг: кнопка «Увійти», без user-chip
+- [x] `GET /login`, `GET /register`, `GET /health` → 200
+- [x] `GET /requests`, `/dashboard`, `/cabinet`, `/clients` (гість) → **302** `/login?next=…`
+- [x] Після входу повернення на `next` працює
+- [x] `POST /login` помилковий пароль → **401** + банер «Невірний email або пароль»
+
+## L4.2. Роутинг після входу
+
+- [x] Авторизований на `/` → редірект на `homeFor`: адмін/майстер/відвідувач → `/dashboard`, клієнт → `/requests/my-orders`
+- [x] `GET /logout` → 302 на `/login?loggedout=1`, сесія знищена
+
+## L4.3. Клієнтська зона
+
+- [x] `client@service.ua` після входу → `/requests/my-orders` (200), список містить `R-2026-0001`
+- [x] Картка своєї заявки — скорочена: номер, статус, пристрій, оцінка/рахунок; **без** секцій «Роботи», «Запчастини», «Коментарі», без форм і кнопок статусів
+- [x] Чужа картка (`R-2026-0004`) → **403**; `/dashboard`, `/requests`, `/clients`, `/requests/my-orders` для tech/admin → **403**
+- [x] `/cabinet` доступний клієнту (200)
+
+## L4.4. Технік: лише свої заявки
+
+- [x] `tech1@service.ua`: `GET /requests` — тільки свої (у seed `R-2026-0001`), чужої `R-2026-0004` немає
+- [x] `/requests/new`, `/clients/new`, `/works/new` → 200, `POST` працює
+- [x] `GET /dashboard` → 200 (адмін бачить обидві заявки в списку)
+
+## L4.5. Відвідувач (read-only)
+
+- [x] `GET /dashboard`, `/requests`, `/clients` → 200
+- [x] `GET /requests/new`, `/clients/new` → **403**
+- [x] `POST` на будь-яку мутацію → 403
+
+## L4.6. Кабінет
+
+- [x] `GET /cabinet` → 200 (адмін/майстер/клієнт/відвідувач)
+- [x] Профіль: `name=` (порожнє) → **400** «Вкажіть ім'я»; дубль чужого email → **400** «Email вже використовується»; валідний POST → **302** + дані оновлені
+- [x] Пароль: неправильний поточний → **400**; mismatch confirm → **400**; коректно → **302**, старий пароль не працює (401), новий — працює
+
+## L4.7. Реєстрація
+
+- [x] `POST /register` новий email + пароль ≥8 → **302**, авто-логін, роль `VISITOR`
+- [x] Дубль email → **400** «Email вже використовується»
+- [x] Зареєстрований бачить read-only (`/clients/new` → 403), без кабінетних обмежень
+- [x] `GET /requests/new` у зареєстрованого → 403, сторінка 403 рендериться
+
+## L4.8. Фінал
+
+- [x] `npx tsc --noEmit` → 0 помилок
+- [x] `scripts/lab4-smoke.ps1` → **69/69**
+- [x] Документи оновлені: README, PAGES.md, DATA_MODEL.md, DECISIONS (D55–D62), TEST_PLAN.md

@@ -363,3 +363,12 @@ ul.attachments { list-style: none; padding: 0; margin: 4px 0; display: flex; fle
 .add-row .field select, .add-row .field input { width: 100%; }
 .add-row .btn { white-space: nowrap; }
 .section-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 12px; }
+
+/* Лендінг (публічна сторінка, Lab 4) */
+.landing-hero { text-align: center; padding: 40px 0 8px; }
+.landing-hero h1 { font-size: 2.2rem; margin-bottom: 12px; }
+.lead { font-size: 1.05rem; color: var(--muted); max-width: 720px; margin: 0 auto 20px; line-height: 1.6; }
+.landing-cta { display: flex; gap: 12px; justify-content: center; margin-bottom: 8px; }
+.landing-device-types { text-align: center; margin-top: 8px; }
+.landing-device-types .badge { margin: 4px; }
+.muted { color: var(--muted); }

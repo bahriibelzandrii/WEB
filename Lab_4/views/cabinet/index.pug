@@ -1,0 +1,88 @@
+extends ../layout
+
+
+block title
+  title Кабінет — Сервіс ремонту техніки
+
+block content
+  -
+    const counts = {};
+    for (const row of byStatus) counts[row.status] = row._count;
+    const myLabel = user.role === "CLIENT" ? "Мої замовлення" : "Мої заявки";
+  .page-head
+    h1 Особистий кабінет
+    .meta
+      span= user.name
+      span.role-badge= roleLabel
+  if changed
+    .alert.alert-ok Профіль оновлено.
+  include ../partials/flash
+
+  .cards
+    .card
+      h2 Мій профіль
+      form(method="post", action="/cabinet/profile")
+        .field
+          label Ім'я
+          input(type="text", name="name", value=((values && values.name) || user.name))
+        .field
+          label Телефон
+          input(type="text", name="phone", value=((values && values.phone) || ""), placeholder="+380671234501")
+        .field
+          label Email
+          input(type="email", name="email", value=((values && values.email) || user.email))
+        .form-actions
+          button.btn.btn-primary(type="submit") Зберегти
+    .card
+      h2 Зміна пароля
+      form(method="post", action="/cabinet/password")
+        .field
+          label Поточний пароль
+          input(type="password", name="currentPassword")
+        .field
+          label Новий пароль (мін. 8 символів)
+          input(type="password", name="newPassword")
+        .field
+          label Повторіть новий пароль
+          input(type="password", name="confirmPassword")
+        .form-actions
+          button.btn.btn-primary(type="submit") Змінити пароль
+
+  .block
+    h2= myLabel
+    .cards
+      each s in statuses
+        .card
+          .card-value= counts[s] || 0
+          .card-label= statusLabels[s]
+
+  .block
+    h2 Останні
+    table.table
+      thead
+        tr
+          th Номер
+          th Клієнт
+          th Пристрій
+          th Статус
+          if user.role === "CLIENT"
+            th До сплати
+          th Дата
+      tbody
+        each it in recent
+          tr
+            td
+              a(href="/requests/" + it.id)= it.number
+            td= it.client.name
+            td= it.device.brand + " " + it.device.model
+            td
+              .badge(class="badge-status-" + it.status.toLowerCase())= statusLabels[it.status]
+            if user.role === "CLIENT"
+              td.align-right
+                if it.invoice
+                  = uah(it.invoice.finalTotal)
+                else
+                  = "—"
+            td= dateOnly(it.createdAt)
+    if recent.length === 0
+      p.empty Нічого не знайдено.

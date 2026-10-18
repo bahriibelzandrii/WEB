@@ -19,7 +19,7 @@ block content
       .badge(class="badge-priority-" + r.priority.toLowerCase())= priorityLabels[r.priority]
     .meta
       span Створено: #{dateTime(r.createdAt)}
-      span Менеджер: #{r.createdBy.name}
+      span Автор заявки: #{r.createdBy.name}
       span Майстер: #{r.assignedTo ? r.assignedTo.name : "не призначено"}
     .page-actions
       a.btn.btn-primary(href="/requests/" + r.id + "/edit") Редагувати

@@ -4,7 +4,7 @@ import { REQUEST_STATUSES } from "../lib/transitions.js";
 import { STATUS_LABELS, TYPE_LABELS, PRIORITY_LABELS } from "../lib/labels.js";
 import { dateOnly } from "../lib/format.js";
 
-/** GET / — дашборд: картки за статусами + 10 останніх заявок (PAGES.md §4.1). */
+/** GET /dashboard — дашборд: картки за статусами + 10 останніх заявок (PAGES.md §4.1). */
 export async function index(_req: Request, res: Response) {
   const [byStatus, total, latest] = await Promise.all([
     prisma.request.groupBy({

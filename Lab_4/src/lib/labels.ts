@@ -62,7 +62,7 @@ export const PAYMENT_METHOD_LABELS: Record<string, string> = {
 
 export const ROLE_LABELS: Record<string, string> = {
   ADMIN: "Адміністратор",
-  MANAGER: "Менеджер",
   TECHNICIAN: "Майстер",
   VISITOR: "Відвідувач",
+  CLIENT: "Клієнт",
 };

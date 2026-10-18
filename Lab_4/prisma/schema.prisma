@@ -15,9 +15,9 @@ datasource db {
 
 enum Role {
   ADMIN
-  MANAGER
   TECHNICIAN
   VISITOR
+  CLIENT
 }
 
 enum DeviceType {
@@ -86,9 +86,11 @@ model User {
   email     String   @unique
   password  String
   phone     String?
-  role      Role     @default(MANAGER)
+  role      Role     @default(CLIENT)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  linkedClient     Client?
 
   createdRequests  Request[]     @relation("RequestCreatedBy")
   assignedRequests Request[]     @relation("RequestAssignedTo")
@@ -113,6 +115,10 @@ model Client {
 
   devices  Device[]
   requests Request[]
+
+  // Прив'язка до акаунта (Lab 4: роль КЛІЄНТ бачить свої замовлення)
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId String? @unique
 }
 
 // Конкретний прилад клієнта (історія: 1—N заявок)
