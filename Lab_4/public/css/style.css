@@ -20,10 +20,13 @@ body {
   background: var(--bg);
   color: var(--text);
   line-height: 1.5;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .container { max-width: 1100px; margin: 0 auto; padding: 0 16px; }
-main.container { padding-top: 24px; padding-bottom: 48px; min-height: calc(100vh - 130px); }
+main.container { padding-top: 24px; padding-bottom: 48px; flex: 1; }
 
 a { color: var(--primary); }
 
@@ -258,6 +261,9 @@ h3 { font-size: 1rem; margin: 18px 0 8px; }
 .btn:hover { border-color: var(--primary); color: var(--primary); }
 .btn-primary { background: var(--primary); border-color: var(--primary); color: #fff; }
 .btn-primary:hover { background: var(--primary-dark); color: #fff; }
+/* Кнопка .btn-primary всередині навігації: специфічність .nav a:not(.brand) вища */
+.nav a.btn-primary { color: #fff; }
+.nav a.btn-primary:hover { background: var(--primary-dark); border-color: var(--primary-dark); color: #fff; }
 .btn-danger { background: #fff; border-color: #dc2626; color: #dc2626; }
 .btn-danger:hover { background: #dc2626; border-color: #dc2626; color: #fff; }
 .btn-small { padding: 5px 10px; font-size: 0.85rem; }
@@ -364,7 +370,7 @@ ul.attachments { list-style: none; padding: 0; margin: 4px 0; display: flex; fle
 .add-row .btn { white-space: nowrap; }
 .section-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 12px; }
 
-/* ������ (������� �������, Lab 4) */
+/* Лендінг та дрібниці (Lab 4) */
 .landing-hero { text-align: center; padding: 40px 0 8px; }
 .landing-hero h1 { font-size: 2.2rem; margin-bottom: 12px; }
 .lead { font-size: 1.05rem; color: var(--muted); max-width: 720px; margin: 0 auto 20px; line-height: 1.6; }
@@ -372,3 +378,17 @@ ul.attachments { list-style: none; padding: 0; margin: 4px 0; display: flex; fle
 .landing-device-types { text-align: center; margin-top: 8px; }
 .landing-device-types .badge { margin: 4px; }
 .muted { color: var(--muted); }
+
+/* Швидкий вхід (демо-акаунти, Lab 4) */
+.quick-login { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 10px; }
+.quick-login .quick-label { color: var(--muted); font-size: 0.85rem; }
+.quick-btn {
+  padding: 4px 10px;
+  font-size: 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+}
+.quick-btn:hover { border-color: var(--primary); color: var(--primary); background: var(--card); }

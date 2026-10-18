@@ -24,3 +24,19 @@ block content
         | Демонстраційні акаунти:
         a(href="/") admin@, client@, tech1@, tech2@, visitor@ (домен service.ua, пароль
         code Secret123)
+    .quick-login
+      span.quick-label Швидкий вхід (1 клік — авто-заповнення і вхід):
+      button(type="button").quick-btn(data-email="client@service.ua") Клієнт
+      button(type="button").quick-btn(data-email="tech1@service.ua") Майстер 1
+      button(type="button").quick-btn(data-email="tech2@service.ua") Майстер 2
+      button(type="button").quick-btn(data-email="visitor@service.ua") Відвідувач
+      button(type="button").quick-btn(data-email="admin@service.ua") Адмін
+    script.
+      document.querySelectorAll(".quick-btn").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          var form = document.querySelector('form[action="/login"]');
+          form.email.value = btn.dataset.email;
+          form.password.value = "Secret123";
+          form.submit();
+        });
+      });
