@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<title>V3 — Бенто (bento grid)</title>
+<style>
+  :root { --bg: #f2f4f8; --ink: #101828; --mut: #667085; --acc: #4f46e5; --acc-soft: #eef2ff;
+    --teal: #0d9488; --amber: #f59e0b; --rose: #e11d48; --line: #e4e7ee; }
+  * { box-sizing: border-box; margin: 0; }
+  body { font-family: system-ui, "Segoe UI", sans-serif; background: var(--bg); color: var(--ink); min-height: 100vh; }
+  .wrap { max-width: 1160px; margin: 0 auto; padding: 0 24px; }
+  header .wrap { display: flex; align-items: center; gap: 22px; padding-top: 20px; padding-bottom: 20px; }
+  .logo { font-weight: 800; font-size: 17px; display: flex; gap: 10px; align-items: center; }
+  .logo i { width: 30px; height: 30px; border-radius: 9px; background: var(--acc); color: #fff;
+    display: grid; place-items: center; font-style: normal; font-size: 15px; }
+  nav { display: flex; gap: 20px; font-size: 14.5px; color: var(--mut); margin-left: 10px; }
+  nav a { color: inherit; text-decoration: none; font-weight: 500; }
+  nav a.on { color: var(--ink); font-weight: 700; }
+  .h-right { margin-left: auto; display: flex; gap: 10px; }
+  .btn { font-size: 14px; font-weight: 600; text-decoration: none; padding: 9px 16px; border-radius: 9px; }
+  .btn.ghost { color: var(--ink); border: 1px solid var(--line); background: #fff; }
+  .btn.solid { background: var(--acc); color: #fff; }
+  .bento { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; padding-bottom: 20px; }
+  .cell { background: #fff; border: 1px solid var(--line); border-radius: 20px; padding: 24px;
+    box-shadow: 0 1px 2px rgba(16,24,40,.04); }
+  .hero-cell { grid-column: span 4; grid-row: span 2; display: flex; flex-direction: column; justify-content: center;
+    background: linear-gradient(145deg, #fff 55%, var(--acc-soft)); }
+  .hero-cell h1 { font-size: 40px; line-height: 1.08; letter-spacing: -.02em; margin: 14px 0 12px; }
+  .hero-cell .lead { color: var(--mut); font-size: 15.5px; line-height: 1.55; max-width: 430px; }
+  .kicker { align-self: flex-start; font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--acc); background: var(--acc-soft); border: 1px solid #dfe3ff; padding: 5px 11px; border-radius: 999px; }
+  .hero-cta { display: flex; gap: 10px; margin-top: 22px; }
+  .side { display: flex; flex-direction: column; gap: 14px; grid-column: span 2; }
+  .mini { background: #fff; border: 1px solid var(--line); border-radius: 20px; padding: 18px; flex: 1; }
+  .mini b { font-size: 15px; display: block; margin-bottom: 4px; }
+  .mini span { color: var(--mut); font-size: 13px; line-height: 1.45; display: block; }
+  .mini .ic { font-size: 20px; float: right; margin-top: -2px; }
+  .steps-cell { grid-column: span 6; display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; padding: 0;
+    background: transparent; border: 0; box-shadow: none; }
+  .step { background: #fff; border: 1px solid var(--line); border-radius: 20px; padding: 20px; }
+  .step .n { width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center;
+    font-size: 13px; font-weight: 800; color: #fff; }
+  .step h3 { font-size: 16px; margin: 12px 0 6px; }
+  .step p { color: var(--mut); font-size: 13.5px; line-height: 1.5; }
+  .devs-cell { grid-column: span 3; }
+  .guar-cell { grid-column: span 3; background: linear-gradient(145deg, #fff, #fef3c7); }
+  .devs-cell h3, .guar-cell h3 { font-size: 17px; margin-bottom: 14px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip { font-size: 13px; font-weight: 500; background: var(--bg); border: 1px solid var(--line);
+    padding: 6px 12px; border-radius: 999px; }
+  .guar-big { font-size: 44px; font-weight: 800; letter-spacing: -.02em; color: var(--amber); line-height: 1; }
+  .guar-cell p { color: var(--mut); font-size: 13.5px; margin-top: 10px; line-height: 1.5; }
+  .track { grid-column: span 6; }
+  .track h3 { font-size: 16px; margin-bottom: 14px; }
+  .trow { display: grid; grid-template-columns: 130px 1fr 130px 150px; gap: 14px; align-items: center;
+    padding: 10px 0; border-top: 1px solid var(--line); font-size: 13.5px; }
+  .trow:first-of-type { border-top: 0; }
+  .trow .id { font-weight: 700; }
+  .trow .who { color: var(--mut); }
+  .pill { font-size: 11.5px; font-weight: 700; padding: 3px 10px; border-radius: 999px; justify-self: start; }
+  .p-new { color: var(--acc); background: var(--acc-soft); }
+  .p-wip { color: #92400e; background: #fef3c7; }
+  .p-done { color: #065f46; background: #d1fae5; }
+  .trow .sum { text-align: right; font-weight: 600; }
+  footer { padding: 26px 0 34px; color: var(--mut); font-size: 13px; display: flex; }
+  footer .wrap { display: flex; justify-content: space-between; }
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <div class="logo"><i>⌘</i> ТехСервіс</div>
+  <nav><a class="on" href="#">Головна</a><a href="#">Як це працює</a><a href="#">Гарантія</a></nav>
+  <div class="h-right"><a class="btn ghost" href="#">Увійти</a><a class="btn solid" href="#">Реєструватись</a></div>
+</div></header>
+<div class="wrap">
+  <section class="bento">
+    <div class="cell hero-cell">
+      <span class="kicker">Ремонт комп’ютерної техніки</span>
+      <h1>Вся історія вашого пристрою — на одному екрані</h1>
+      <p class="lead">Діагностика, оцінка, рахунок, оплата і гарантія — кожен крок зафіксований у заявці. Жодних чорних скринь.</p>
+      <div class="hero-cta"><a class="btn solid" href="#">Створити заявку</a><a class="btn ghost" href="#">Проглянути статус</a></div>
+    </div>
+    <div class="side">
+      <div class="mini"><span class="ic">⚡</span><b>~1 день</b><span>на діагностику та висновки майстра</span></div>
+      <div class="mini"><span class="ic">🛡</span><b>12 місяців</b><span>гарантія на всі виконані роботи</span></div>
+      <div class="mini"><span class="ic">₴</span><b>Оцінка до ремонту</b><span>без змін ціни «по ходу»</span></div>
+    </div>
+    <div class="steps-cell">
+      <div class="step"><div class="n" style="background:var(--acc)">1</div><h3>Звернення</h3><p>Опишіть проблему самостійно або через майстра. Оберіть пристрій.</p></div>
+      <div class="step"><div class="n" style="background:var(--teal)">2</div><h3>Діагностика та оцінка</h3><p>Висновки фіксуються в заявці. Ремонт — лише після вашого «так».</p></div>
+      <div class="step"><div class="n" style="background:var(--amber)">3</div><h3>Ремонт і гарантія</h3><p>Роботи, запчастини, рахунок і платіж — у картці заявки.</p></div>
+    </div>
+    <div class="cell devs-cell">
+      <h3>Що ремонтуємо</h3>
+      <div class="chips"><span class="chip">ПК</span><span class="chip">Ноутбуки</span><span class="chip">Монітори</span><span class="chip">Телефони</span><span class="chip">Планшети</span><span class="chip">Принтери</span><span class="chip">Інша техніка</span></div>
+    </div>
+    <div class="cell guar-cell">
+      <h3>Гарантія</h3>
+      <div class="guar-big">12 міс.</div>
+      <p>На гарантію приймаємо та власні звернення. Оформлюємо в тій самій заявці.</p>
+    </div>
+    <div class="cell track">
+      <h3>Статус заявок — наочно</h3>
+      <div class="trow"><span class="id">R-2026-0184</span><span class="who">Ноутбук HP EliteBook 840</span><span class="pill p-wip">Діагностика</span><span class="sum">—</span></div>
+      <div class="trow"><span class="id">R-2026-0187</span><span class="who">Принтер Epson L3210</span><span class="pill p-done">Завершено</span><span class="sum">980 ₴</span></div>
+      <div class="trow"><span class="id">R-2026-0190</span><span class="who">ПК · ігрова система</span><span class="pill p-new">Нова</span><span class="sum">—</span></div>
+    </div>
+  </section>
+</div>
+<footer><div class="wrap"><span>Сервіс ремонту та обслуговування комп’ютерної техніки</span><span>© 2026 · Lab 4 mockup V3</span></div></footer>
+</body>
+</html>

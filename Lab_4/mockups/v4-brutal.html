@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<title>V4 — Бруталізм (brutalist)</title>
+<style>
+  :root { --paper: #f4f1ea; --ink: #111; --yel: #ffd400; --red: #ff3b30; }
+  * { box-sizing: border-box; margin: 0; }
+  body { font-family: "Courier New", ui-monospace, monospace; background: var(--paper); color: var(--ink);
+    min-height: 100vh; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 0 24px; }
+  header { border-bottom: 4px solid var(--ink); background: var(--yel); }
+  header .wrap { display: flex; align-items: center; gap: 24px; height: 68px; }
+  .logo { font-size: 18px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+  nav { display: flex; gap: 4px; font-size: 13px; text-transform: uppercase; font-weight: 700; }
+  nav a { color: var(--ink); text-decoration: none; padding: 8px 12px; border: 2px solid transparent; }
+  nav a.on { border: 2px solid var(--ink); background: var(--paper); }
+  .h-right { margin-left: auto; display: flex; gap: 10px; }
+  .btn { font-family: inherit; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
+    text-decoration: none; padding: 10px 16px; border: 3px solid var(--ink); background: var(--paper);
+    color: var(--ink); box-shadow: 4px 4px 0 var(--ink); display: inline-block; }
+  .btn:hover { transform: translate(2px,2px); box-shadow: 2px 2px 0 var(--ink); }
+  .btn.dark { background: var(--ink); color: var(--paper); }
+  .hero { padding: 64px 0 20px; border-bottom: 4px solid var(--ink);
+    background: repeating-linear-gradient(-45deg, transparent 0 26px, rgba(17,17,17,.035) 26px 52px); }
+  .hero .wrap { display: grid; grid-template-columns: 1.2fr .8fr; gap: 40px; align-items: center; }
+  h1 { font-size: 66px; line-height: .98; text-transform: uppercase; letter-spacing: -.02em; }
+  h1 .hl { background: var(--yel); padding: 0 10px; box-shadow: 6px 6px 0 var(--ink); display: inline-block; }
+  .sub { margin-top: 22px; font-size: 15px; line-height: 1.65; max-width: 480px; border-left: 6px solid var(--yel);
+    padding-left: 16px; }
+  .cta { display: flex; gap: 14px; margin-top: 30px; }
+  .stamp { transform: rotate(-6deg); border: 4px solid var(--ink); padding: 16px 20px; background: #fff;
+    box-shadow: 8px 8px 0 var(--ink); text-align: center; }
+  .stamp .big { font-size: 40px; font-weight: 700; line-height: 1; }
+  .stamp .sm { font-size: 12px; text-transform: uppercase; letter-spacing: .14em; margin-top: 8px; }
+  .stamp.red { background: var(--red); color: #fff; border-color: var(--ink); }
+  .stamps { display: grid; gap: 26px; padding-top: 20px; }
+  .marquee { background: var(--ink); color: var(--paper); padding: 10px 0; font-size: 13px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .18em; white-space: nowrap; overflow: hidden; }
+  .marquee span { display: inline-block; padding-right: 40px; }
+  .band { padding: 44px 0 52px; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; }
+  .blk { border: 3px solid var(--ink); background: #fff; padding: 22px; box-shadow: 7px 7px 0 var(--ink); }
+  .blk .n { font-size: 12px; font-weight: 700; background: var(--yel); display: inline-block;
+    padding: 4px 10px; border: 2px solid var(--ink); text-transform: uppercase; }
+  .blk h3 { font-size: 19px; text-transform: uppercase; margin: 14px 0 8px; letter-spacing: .02em; }
+  .blk p { font-size: 13.5px; line-height: 1.6; }
+  .devs { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 34px; }
+  .dev { font-size: 13px; font-weight: 700; text-transform: uppercase; border: 2px solid var(--ink);
+    padding: 7px 14px; background: #fff; }
+  .dev:nth-child(odd) { background: var(--yel); }
+  footer { border-top: 4px solid var(--ink); padding: 18px 0; font-size: 12px; text-transform: uppercase;
+    letter-spacing: .08em; display: flex; }
+  footer .wrap { display: flex; justify-content: space-between; }
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <div class="logo">⚒ ТехСервіс</div>
+  <nav><a class="on" href="#">Головна</a><a href="#">Підхід</a><a href="#">Ціни</a><a href="#">Гарантія</a></nav>
+  <div class="h-right"><a class="btn" href="#">Увійти</a><a class="btn dark" href="#">Реєстрація</a></div>
+</div></header>
+<div class="wrap">
+  <section class="hero"><div class="wrap">
+    <div>
+      <h1>Зламав?<br>Ми <span class="hl">Зберемо</span><br>знову.</h1>
+      <p class="sub">Комп’ютери, ноутбуки, принтери. Діагностика за ~1 день. Оцінка фіксується до погодження. Рахунок, оплати і статус — у заявці, не «на словах».</p>
+      <div class="cta"><a class="btn dark" href="#">→ Створити заявку</a><a class="btn" href="#">Як працює</a></div>
+    </div>
+    <div class="stamps">
+      <div class="stamp"><div class="big">~1 ДЕНЬ</div><div class="sm">діагностика + висновки</div></div>
+      <div class="stamp red"><div class="big">12 МІС</div><div class="sm">гарантія на роботи</div></div>
+    </div>
+  </div></section>
+  <div class="marquee"><span>ПРОВІРКА БЕЗКОШТОВНО • ОЦІНКА ДО ПОГОДЖЕННЯ • РАХУНОК У ЗАЯВЦІ • ГАРАНТІЯ 12 МІСЯЦІВ • ПРОВІРКА БЕЗКОШТОВНО • ОЦІНКА ДО ПОГОДЖЕННЯ • РАХУНОК У ЗАЯВЦІ • ГАРАНТІЯ 12 МІСЯЦІВ •</span></div>
+  <section class="band">
+    <div class="grid3">
+      <div class="blk"><span class="n">01</span><h3>Звернення</h3><p>Опишіть проблему під час входу або через майстра. Пристрій, симптоми — і заявка створена.</p></div>
+      <div class="blk"><span class="n">02</span><h3>Діагностика</h3><p>Майстер оглядає техніку, фіксує висновки. Оцінку затверджуєте ви. Без сюрпризів.</p></div>
+      <div class="blk"><span class="n">03</span><h3>Ремонт + гарантія</h3><p>Роботи, запчастини, рахунок і платіж — в одній картці заявки. 12 місяців гарантії.</p></div>
+    </div>
+    <div class="devs"><span class="dev">ПК</span><span class="dev">Ноутбуки</span><span class="dev">Монітори</span><span class="dev">Телефони</span><span class="dev">Планшети</span><span class="dev">Принтери</span><span class="dev">Інша техніка</span></div>
+  </section>
+</div>
+<footer><div class="wrap"><span>Сервіс ремонту та обслуговування комп’ютерної техніки</span><span>© 2026 · Lab 4 mockup V4</span></div></footer>
+</body>
+</html>
