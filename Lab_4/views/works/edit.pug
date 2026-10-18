@@ -1,0 +1,27 @@
+extends ../layout
+
+block title
+  title Редагування: #{w.name} — Сервіс ремонту техніки
+
+block content
+  .page-head
+    h1 Редагування: #{w.name}
+
+  form(method="post", action="/works/" + w.id + "/edit")
+    .form-grid
+      .field
+        label Назва
+        input(type="text", name="name", value=((values ? values.name : w.name) || ""))
+      .field
+        label Базова ціна, ₴
+        input(type="text", name="basePrice", inputmode="decimal", placeholder="0.00", value=(values ? values.basePrice : String(w.basePrice)))
+      .field
+        label Години
+        input(type="text", name="baseHours", inputmode="decimal", placeholder="1", value=(values ? values.baseHours : String(w.baseHours)))
+      .field.field-wide
+        label Опис
+        input(type="text", name="description", value=((values ? values.description : w.description) || ""))
+    .form-actions
+      a.btn.btn-danger(href="/works/" + w.id + "/delete") Видалити
+      button.btn.btn-primary(type="submit") Зберегти
+      a.btn(href="/works") Скасувати

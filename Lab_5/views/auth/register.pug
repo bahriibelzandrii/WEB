@@ -1,0 +1,29 @@
+extends ../layout
+
+block title
+  title Реєстрація — Сервіс ремонту техніки
+
+block content
+  .auth-card
+    h1 Реєстрація відвідувача
+    p.auth-sub Нові акаунти отримують роль «Відвідувач» (перегляд каталогів і заявок)
+    include ../partials/flash
+    form(method="post", action="/register")
+      .field
+        label Ім'я
+        input(type="text", name="name", value=((values && values.name) || ""))
+      .field
+        label Email
+        input(type="email", name="email", value=((values && values.email) || ""), placeholder="you@example.com")
+      .field
+        label Телефон (необов'язково)
+        input(type="text", name="phone", value=((values && values.phone) || ""), placeholder="+380671234567")
+      .field
+        label Пароль (мін. 8 символів)
+        input(type="password", name="password")
+      .field
+        label Повторіть пароль
+        input(type="password", name="password2")
+      .form-actions
+        button.btn.btn-primary(type="submit") Зареєструватись
+        a.btn(href="/login") У мене вже є акаунт

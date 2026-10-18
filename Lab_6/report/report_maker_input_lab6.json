@@ -1,0 +1,85 @@
+{
+  "meta": {
+    "course_code": "ВЕБ",
+    "course_name": "Вебтехнології",
+    "lab_number": 6,
+    "topic": "RESTful API",
+    "author": "Багрія-Белз Андрій",
+    "group": "КН-2327Б",
+    "variant": null,
+    "objective": "Реалізувати RESTful API /api: JSON-інтерфейс для читання та управління даними системи з автентифікацією за сесією, матрицею ролей 1:1 з web і тими самими правилами валідації (без подвійної бізнес-логіки).",
+    "title_word": "ЗВІТ",
+    "title_style": "standard"
+  },
+  "body": [
+    {
+      "type": "task",
+      "number": 1,
+      "text": "Автентифікація та контроль ролей для /api: та сама сесія (cookie), що і для Web; гостю — 401, неповноваженій ролі — 403 зі списком потрібних ролей; неіснуюча точка — JSON 404."
+    },
+    {
+      "type": "code",
+      "label": "src/api/http.ts — middleware захисту /api",
+      "text": "/** Захист /api ролями: 401 для гостей, 403 для низьших ролей (JSON, без редіректів). */\nexport function apiAuth(roles: readonly string[]) {\n  return (req: Request, res: Response, next: NextFunction) => {\n    if (!req.user) return res.status(401).json({ error: \"Authentication required\" });\n    if (!roles.includes(req.user.role)) {\n      return res.status(403).json({ error: \"Forbidden\", requiredRoles: roles });\n    }\n    next();\n  };\n}"
+    },
+    {
+      "type": "code",
+      "label": "Жива поведінка (guest / visitor / admin):",
+      "text": "GET /api/works?pageSize=2 (guest)\nHTTP 200 {\"data\":[{\"id\":\"…\",\"name\":\"Відновлення даних\",\"basePrice\":\"2000\",\"baseHours\":3},\n                {\"id\":\"…\",\"name\":\"Встановлення ОС\",\"basePrice\":\"700\",\"baseHours\":1.5}],\n         \"page\":1,\"pageSize\":2,\"total\":14,\"totalPages\":7}\n\nPOST /api/clients (guest)\nHTTP 401 {\"error\":\"Authentication required\"}\n\nPOST /api/clients (visitor)\nHTTP 403 {\"error\":\"Forbidden\",\"requiredRoles\":[\"ADMIN\",\"MANAGER\"]}\n\nGET /api/clients/no-such-id (admin)\nHTTP 404 {\"error\":\"Not found\"}"
+    },
+    {
+      "type": "task",
+      "number": 2,
+      "text": "Ресурси та JSON-конверти: GET-списки з пагінацією ?page&pageSize, картки з повними зв'язками, коди 201/200/204; помилки валідації — 400 зі списком errors[]. REST не дублює бізнес-логіку: мутації викликають ті самі web-контролери (runWeb)."
+    },
+    {
+      "type": "code",
+      "label": "src/api/routes.ts — фрагмент",
+      "text": "// Публічні читання (усі ролі, включно з гостями)\nrouter.get(\"/requests\", wrap(L.listRequests));\nrouter.get(\"/requests/:id\", wrap(L.getRequest));\n\n// Клієнти / Пристрої (MANAGER+)\nrouter.post(\"/clients\", apiAuth(ROLES.MANAGER), wrap(M.createClient));\nrouter.put(\"/clients/:id\", apiAuth(ROLES.MANAGER), wrap(M.editClient));\nrouter.delete(\"/clients/:id\", apiAuth(ROLES.MANAGER), wrap(M.removeClient));\n\n// Заявки — Статус / роботи / запчастини / діагностика — МАЙСТЕР+\nrouter.post(\"/requests/:id/transition\", apiAuth(ROLES.TECH), wrap(M.transitionRequest));\nrouter.post(\"/requests/:id/works\", apiAuth(ROLES.TECH), wrap(M.addWorkLine));\nrouter.post(\"/requests/:id/parts\", apiAuth(ROLES.TECH), wrap(M.addPartLine));\nrouter.post(\"/requests/:id/diagnostics\", apiAuth(ROLES.TECH), wrap(M.saveDiagnostics));\n\n// Оцінка / рахунок / оплата / гарантія — МЕНЕДЖЕР+\nrouter.post(\"/requests/:id/estimate\", apiAuth(ROLES.MANAGER), wrap(M.saveEstimate));\nrouter.post(\"/requests/:id/invoice\", apiAuth(ROLES.MANAGER), wrap(M.createInvoice));\nrouter.post(\"/requests/:id/payments\", apiAuth(ROLES.MANAGER), wrap(M.addPayment));"
+    },
+    {
+      "type": "images",
+      "images": [
+        "C:/Programing/University/WEB/Lab_6/report/screenshots/01_api_requests_json.png"
+      ]
+    },
+    {
+      "type": "text",
+      "text": "Список /api/requests?pageSize=5 у браузері: конверт {data, page, pageSize, total, totalPages} — 5 із 60 заявок. Картка /api/requests/:id повертає {data: …} з клієнтом, пристроєм, автором, роботою, запчастини, оцінкою, рахунком, коментарями та вкладеннями. Парольні хеші у зв'язках користувачів не повертаються (Prisma omit: password)."
+    },
+    {
+      "type": "task",
+      "number": 3,
+      "text": "Повний життєвий цикл заявки через API: створення → перехід до діагностики → роботи/запчастини → діагностика → оцінка (DRAFT → APPROVED) → рахунок → оплати (UNPAID → PARTIAL → PAID)."
+    },
+    {
+      "type": "code",
+      "label": "Живий прогін (admin / manager / tech1):",
+      "text": "POST /api/clients (admin)\nHTTP 201 {\"data\":{\"id\":\"…\",\"name\":\"Report Client 153045\",\"phone\":\"0675550001\", …}}\n\nPOST /api/devices (admin)\nHTTP 201 {\"data\":{\"id\":\"…\",\"type\":\"PC\",\"brand\":\"Report\",\"model\":\"R153045\", …}}\n\nPOST /api/requests (admin)\nHTTP 201 {\"data\":{\"id\":\"…\",\"number\":\"R-2026-0061\",\"type\":\"REPAIR\",\"status\":\"NEW\", …}}\n\nPOST /api/requests/:id/transition (tech1) {\"status\":\"IN_DIAGNOSTICS\"}\nHTTP 200 {\"data\":{…,\"status\":\"IN_DIAGNOSTICS\"}}\n\nPOST /api/requests/:id/works (tech1) → HTTP 201 (робота «Відновлення даних», 2000 грн, 3 год)\nPOST /api/requests/:id/parts (tech1)  → HTTP 201 (RAM DDR4 16GB × 2 × 10.50)\nPOST /api/requests/:id/diagnostics (tech1) → HTTP 200 (findings + вартість 5)\n\nPOST /api/requests/:id/estimate (manager) {\"status\":\"DRAFT\",\"totalWorks\":\"2000\",\"totalParts\":\"21\",\"total\":\"2021\"}\nHTTP 200\nPOST /api/requests/:id/estimate/approve (manager)\nHTTP 200 {\"data\":{…,\"status\":\"APPROVED\",\"approvedAt\":\"…\"}}\n\nPOST /api/requests/:id/invoice (manager) {\"discount\":0}\nHTTP 201 {\"data\":{…,\"finalTotal\":\"2021\",\"status\":\"UNPAID\",\"payments\":[]}}\n\nPOST /api/requests/:id/payments (manager) {\"amount\":5.25,\"method\":\"CASH\"}\nHTTP 201 {\"data\":{…,\"status\":\"PARTIAL\",\"payments\":[{…,\"amount\":\"5.25\",\"method\":\"CASH\"}]}}\n\nPOST /api/requests/:id/payments (manager) {\"amount\":2015.75,\"method\":\"CARD\"}\nHTTP 201 {\"data\":{…,\"status\":\"PAID\",\"payments\":[{…5.25 CASH…},{…2015.75 CARD…}]}}"
+    },
+    {
+      "type": "images",
+      "images": [
+        "C:/Programing/University/WEB/Lab_6/report/screenshots/02_api_request_full.png"
+      ]
+    },
+    {
+      "type": "text",
+      "text": "Повна картка заявки після завершення оплати: статус IN_DIAGNOSTICS, рахунок на 2021 грн зі статусом PAID та дві оплати (5.25 CASH + 2015.75 CARD). Цикл пройшов через ті самі web-контролери (runWeb), тож статусна машина та інваріанти І1–І10 застосовувалися так само, як і через Web."
+    },
+    {
+      "type": "task",
+      "number": 4,
+      "text": "Автоматична перевірка API: E2E-скрипт на живій базі (статуси, створення, цикл, пагінація, видалення)."
+    },
+    {
+      "type": "text",
+      "text": "Скрипт scripts/lab6-smoke.ps1 автоматизовано перевіряє 70 сценаріїв: 401 для гостей, 403 за ролями (requiredRoles), 404, 400 зі списком помилок, створення клієнта/пристрою/заявки, повний фінансовий цикл (UNPAID → PARTIAL → PAID), пагінацію списків і видалення записів (204). Результат: 70 із 70 перевірок пройдено на свіжій базі даних."
+    }
+  ],
+  "conclusion": "На цій лабораторній роботі я реалізував RESTful API /api над існуючим застосунком: 36 точок для восьми типів ресурсів із матрицею ролей, ідентичною web-шару, JSON-конвертами {data, page, pageSize, total, totalPages}, пагінацією ?page&pageSize та кодами 401/403/404/400/201/200/204. Ключове рішення — REST не дублює бізнес-логіку: мутації викликають ті самі web-контролери (runWeb), тому валідація, статусна машина та інваріанти однаково діють і для Web, і для API. Реалізовано перехоплення помилок Prisma (P2002/P2003 → 400, P2025 → 404) та приховування парольних хешів у зв'язках. Результат перевірено живим прогромом повного життєвого циклу заявки (створення → діагностика → оцінка → рахунок → дві оплати → PAID) та E2E-скриптом: 70 із 70 перевірок.",
+  "output": {
+    "dir": "C:/Programing/University/WEB/Lab_6/report",
+    "format": "docx"
+  }
+}

@@ -1,0 +1,41 @@
+extends ../layout
+
+block title
+  title Новий пристрій — Сервіс ремонту техніки
+
+block content
+  .page-head
+    h1 Новий пристрій
+
+  form(method="post", action="/devices")
+    .form-grid
+      .field
+        label Тип
+        select(name="type")
+          option(value="") Оберіть…
+          each dt in deviceTypes
+            option(value=dt, selected=(values && values.type === dt))= deviceTypeLabels[dt]
+      .field
+        label Бренд
+        input(type="text", name="brand", value=(values && values.brand || ""))
+      .field
+        label Модель
+        input(type="text", name="model", value=(values && values.model || ""))
+      .field
+        label Серійний номер
+        input(type="text", name="serialNumber", value=(values && values.serialNumber || ""))
+      .field
+        label Дата покупки
+        input(type="date", name="purchasedAt", value=(values && values.purchasedAt || ""))
+      .field
+        label Власник
+        select(name="ownerId")
+          option(value="") Оберіть…
+          each c in clients
+            option(value=c.id, selected=(values && values.ownerId === c.id))= c.name + " — " + c.phone
+      .field.field-wide
+        label Характеристики
+        input(type="text", name="specs", value=(values && values.specs || ""))
+    .form-actions
+      button.btn.btn-primary(type="submit") Створити пристрій
+      a.btn(href="/devices") Скасувати

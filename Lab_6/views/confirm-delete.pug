@@ -1,0 +1,14 @@
+extends layout
+
+block title
+  title Підтвердження видалення — Сервіс ремонту техніки
+
+block content
+  .block
+    h1= confirmTitle
+    p= confirmSummary
+    p.confirm-note Після підтвердження запис буде видалений — дію не можна скасувати.
+    .form-actions
+      form.inline(method="post", action=confirmAction)
+        button.btn.btn-danger(type="submit") Так, видалити
+      a.btn(href=confirmBack) Скасувати

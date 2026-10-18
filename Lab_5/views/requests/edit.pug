@@ -1,0 +1,87 @@
+extends ../layout
+
+block title
+  title Редагування #{r.number} — Сервіс ремонту техніки
+
+block content
+  h1 Редагування: #{r.number}
+  .badges
+    .badge(class="badge-status-" + r.status.toLowerCase())= statusLabels[r.status]
+  p.lead Статус змінюється кнопками на картці заявки (машина станів)
+
+  form(method="post", action="/requests/" + r.id + "/edit")
+    .form-grid
+      .field
+        label Тип заявки
+        select#type(name="type")
+          each t in types
+            option(value=t, selected=((values ? values.type : r.type) === t))= typeLabels[t]
+      .field
+        label Пріоритет
+        select(name="priority")
+          each p in priorities
+            option(value=p, selected=((values ? values.priority : r.priority) === p))= priorityLabels[p]
+    .field
+      label Опис проблеми / що обслуговувати
+      textarea(name="description", rows="4")= (values && values.description) || r.description || ""
+    .form-grid
+      .field
+        label Клієнт
+        select#clientId(name="clientId")
+          option(value="") Оберіть…
+          each c in clients
+            option(value=c.id, selected=((values ? values.clientId : r.clientId) === c.id))= c.name + " — " + c.phone
+      .field
+        label Пристрій
+        select#deviceId(name="deviceId")
+          option(value="") Оберіть…
+          each d in devices
+            option(value=d.id, data-owner=d.owner.id, selected=((values ? values.deviceId : r.deviceId) === d.id))= d.brand + " " + d.model + " — " + d.owner.name
+      .field
+        label Майстер
+        select(name="technicianId")
+          option(value="") Не призначено
+          each u in users
+            option(value=u.id, selected=((values ? values.technicianId : r.assignedToId) === u.id))= u.name + " (" + roleLabels[u.role] + ")"
+    #warrantyBlock(style="display: none")
+      .field
+        label Оригінальний завершений ремонт
+        select(name="originalRequestId")
+          option(value="") Оберіть заявку…
+          each o in completed
+            option(value=o.id, selected=((values ? values.originalRequestId : r.originalRequestId) === o.id))= o.number + " — " + o.client.name
+    .form-actions
+      button.btn.btn-primary(type="submit") Зберегти
+      a.btn(href="/requests/" + r.id) Скасувати
+      a.btn.btn-danger(href="/requests/" + r.id + "/delete") Видалити
+
+  script.
+    (function () {
+      function show(id, visible) {
+        var el = document.getElementById(id);
+        if (el) el.style.display = visible ? "" : "none";
+      }
+      function applyFilter() {
+        var clientSel = document.getElementById("clientId");
+        var devSel = document.getElementById("deviceId");
+        if (!clientSel || !devSel) return;
+        var owner = clientSel.value;
+        for (var i = 0; i < devSel.options.length; i++) {
+          var o = devSel.options[i];
+          if (!o.value) continue;
+          o.style.display = (!owner || o.dataset.owner === owner) ? "" : "none";
+        }
+        if (owner && devSel.value && devSel.options[devSel.selectedIndex].style.display === "none") {
+          devSel.selectedIndex = 0;
+        }
+      }
+      function toggle() {
+        show("warrantyBlock", document.getElementById("type").value === "WARRANTY_CLAIM");
+        applyFilter();
+      }
+      document.addEventListener("DOMContentLoaded", function () {
+        document.getElementById("type").addEventListener("change", toggle);
+        document.getElementById("clientId").addEventListener("change", toggle);
+        toggle();
+      });
+    })();

@@ -1,0 +1,42 @@
+extends ../layout
+
+block title
+  title Редагування: #{d.brand} #{d.model} — Сервіс ремонту техніки
+
+block content
+  .page-head
+    h1 Редагування: #{d.brand} #{d.model}
+
+  form(method="post", action="/devices/" + d.id + "/edit")
+    .form-grid
+      .field
+        label Тип
+        select(name="type")
+          option(value="") Оберіть…
+          each dt in deviceTypes
+            option(value=dt, selected=((values ? values.type : d.type) === dt))= deviceTypeLabels[dt]
+      .field
+        label Бренд
+        input(type="text", name="brand", value=((values ? values.brand : d.brand) || ""))
+      .field
+        label Модель
+        input(type="text", name="model", value=((values ? values.model : d.model) || ""))
+      .field
+        label Серійний номер
+        input(type="text", name="serialNumber", value=((values ? values.serialNumber : d.serialNumber) || ""))
+      .field
+        label Дата покупки
+        input(type="date", name="purchasedAt", value=(values ? values.purchasedAt : d.purchasedAt ? d.purchasedAt.toISOString().slice(0, 10) : ""))
+      .field
+        label Власник
+        select(name="ownerId")
+          option(value="") Оберіть…
+          each c in clients
+            option(value=c.id, selected=((values ? values.ownerId : d.ownerId) === c.id))= c.name + " — " + c.phone
+      .field.field-wide
+        label Характеристики
+        input(type="text", name="specs", value=((values ? values.specs : d.specs) || ""))
+    .form-actions
+      a.btn.btn-danger(href="/devices/" + d.id + "/delete") Видалити
+      button.btn.btn-primary(type="submit") Зберегти
+      a.btn(href="/devices/" + d.id) Скасувати

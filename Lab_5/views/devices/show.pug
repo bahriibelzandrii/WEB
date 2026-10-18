@@ -1,0 +1,56 @@
+extends ../layout
+
+block title
+  title= d.brand + " " + d.model + " — Сервіс ремонту техніки"
+
+block content
+  .page-head
+    .page-head-top
+      h1= d.brand + " " + d.model
+      a.btn(href="/devices") ← Назад
+    .badges
+      .badge= deviceTypeLabels[d.type]
+    .meta
+      if d.serialNumber
+        span Серійний № #{d.serialNumber}
+      if d.purchasedAt
+        span Куплений: #{dateOnly(d.purchasedAt)}
+    if can.manage
+      .page-actions
+        a.btn(href="/devices/" + d.id + "/edit") Редагувати
+        a.btn.btn-danger(href="/devices/" + d.id + "/delete") Видалити
+
+  if d.specs
+    .block
+      h2 Характеристики
+      p= d.specs
+
+  .block
+    h2 Власник
+    p
+      a(href="/clients/" + d.owner.id)= d.owner.name
+      |  ·  #{d.owner.phone}
+
+  .block
+    h2 Історія заявок (#{d.requests.length})
+    if d.requests.length > 0
+      table.table
+        thead
+          tr
+            th Номер
+            th Тип
+            th Пріоритет
+            th Статус
+            th Дата
+        tbody
+          each r in d.requests
+            tr
+              td
+                a(href="/requests/" + r.id)= r.number
+              td= typeLabels[r.type]
+              td= priorityLabels[r.priority]
+              td
+                .badge(class="badge-status-" + r.status.toLowerCase())= statusLabels[r.status]
+              td= dateOnly(r.createdAt)
+    else
+      p.empty-text Заявок немає

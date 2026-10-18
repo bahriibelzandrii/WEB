@@ -1,0 +1,48 @@
+extends ../layout
+
+include ../partials/pagination
+
+block title
+  title Пристрої — Сервіс ремонту техніки
+
+block content
+  .page-head
+    .page-head-top
+      h1 Пристрої
+      if can.manage
+        a.btn.btn-primary(href="/devices/new") Новий пристрій
+
+  form.filters(method="get", action="/devices")
+    .field
+      label Пошук
+      input(type="search", name="q", placeholder="Бренд, модель, серійний №", value=(q || ""))
+    button.btn(type="submit") Застосувати
+
+  table.table
+    thead
+      tr
+        th Бренд / модель
+        th Тип
+        th Серійний №
+        th Власник
+        th.num Заявки
+        th.act Дії
+    tbody
+      each d in items
+        tr
+          td
+            a(href="/devices/" + d.id)= d.brand + " " + d.model
+          td= deviceTypeLabels[d.type]
+          td= d.serialNumber || "—"
+          td
+            a(href="/clients/" + d.owner.id)= d.owner.name
+          td.num= d._count.requests
+          if can.manage
+            a.btn-small.btn-danger(href="/devices/" + d.id + "/delete") Видалити
+      if items.length === 0
+        tr
+          td(colspan=6).empty
+            | Нічого не знайдено
+            a(href="/devices") Скинути пошук
+
+  +pagination(page, totalPages, base, pageNumbers, shownFrom, shownTo, total)

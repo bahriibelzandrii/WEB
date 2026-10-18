@@ -1,0 +1,19 @@
+extends ../layout
+
+block title
+  title 403 — Доступ заборонено
+
+block content
+  .error-page
+    h1 403
+    p Доступ заборонено
+    if user
+      p
+        | Ви завантажені як «
+        = roleLabel || user.role
+        if requiredRoles
+          | ». Ця дія доступна ролям:
+          strong= requiredRoles
+    else
+      p Спочатку увійдіть у систему.
+    a.btn.btn-primary(href="/") На головну

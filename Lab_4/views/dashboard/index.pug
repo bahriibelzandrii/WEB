@@ -1,0 +1,47 @@
+extends ../layout
+
+block title
+  title Головна — Сервіс ремонту техніки
+
+block content
+  h1 Сервіс ремонту техніки
+  p.lead Заявки на ремонт, обслуговування та гарантійне звернення
+
+  .cards
+    a.card.card-total(href="/requests")
+      .card-value= total
+      .card-label Всього заявок
+    each s in statuses
+      a.card(href=`/requests?status=${s}`)
+        .card-value= counts[s] || 0
+        .card-label= statusLabels[s]
+
+  h2 Останні заявки
+  table.table
+    thead
+      tr
+        th Номер
+        th Клієнт
+        th Пристрій
+        th Тип
+        th Пріоритет
+        th Статус
+        th Дата
+    tbody
+      each r in latest
+        tr
+          td
+            a(href=`/requests/${r.id}`)= r.number
+          td= r.client.name
+          td= r.device.brand + " " + r.device.model
+          td= typeLabels[r.type]
+          td
+            .badge(class="badge-priority-" + r.priority.toLowerCase())= priorityLabels[r.priority]
+          td
+            .badge(class="badge-status-" + r.status.toLowerCase())= statusLabels[r.status]
+          td= dateOnly(r.createdAt)
+      if latest.length === 0
+        tr
+          td(colspan=7).empty
+            | Поки немає заявок
+            a(href="/requests/new") Створити першу заявку

@@ -1,0 +1,32 @@
+extends ../layout
+
+block title
+  title Новий користувач — Сервіс ремонту техніки
+
+block content
+  .page-head
+    h1 Новий користувач
+
+  form(method="post", action="/users")
+    .form-grid
+      .field
+        label Ім'я
+        input(type="text", name="name", value=(values && values.name || ""))
+      .field
+        label Email (логін)
+        input(type="email", name="email", value=(values && values.email || ""))
+      .field
+        label Телефон
+        input(type="text", name="phone", placeholder="+380671234501", value=(values && values.phone || ""))
+      .field
+        label Роль
+        select(name="role")
+          each rl in roles
+            option(value=rl, selected=(values && values.role === rl))= roleLabels[rl]
+      .field
+        label Пароль
+        input(type="password", name="password", placeholder="мінімум 6 символів")
+
+    .form-actions
+      button.btn.btn-primary(type="submit") Створити користувача
+      a.btn(href="/users") Скасувати

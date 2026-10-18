@@ -1,0 +1,79 @@
+{
+  "meta": {
+    "course_code": "ВЕБ",
+    "course_name": "Вебтехнології",
+    "lab_number": 5,
+    "topic": "Захищена область управління даними",
+    "author": "Багрія-Белз Андрій",
+    "group": "КН-2327Б",
+    "variant": null,
+    "objective": "Реалізувати захищену область, де авторизований користувач із потрібними повноваженнями управляє даними системи: новий модуль користувачів (адмін), role-aware інтерфейс, CRUD-покрытие всіх 15 таблиць за матрицею дозволів.",
+    "title_word": "ЗВІТ",
+    "title_style": "standard"
+  },
+  "body": [
+    {
+      "type": "task",
+      "number": 1,
+      "text": "Новий модуль /users — лише для ролі Адміністратор: список користувачів з пошуком за ім'я, email або телефоном."
+    },
+    {
+      "type": "code",
+      "label": "src/routes/users.ts — захист усього routera одним вейдером",
+      "text": "import { requireRole } from \"../lib/auth.js\";\nimport * as c from \"../controllers/users.js\";\n\n// Керування користувачами — лише АДМІНІСТРАТОР (матриця дозволів, Lab 5).\nconst router = Router();\n\nrouter.use(requireRole([\"ADMIN\"]));\n\nrouter.get(\"/\", c.index);\nrouter.get(\"/new\", c.createForm);\nrouter.post(\"/\", c.create);\nrouter.get(\"/:id/edit\", c.editForm);\nrouter.post(\"/:id/edit\", c.edit);\nrouter.get(\"/:id/delete\", c.confirmRemove);\nrouter.post(\"/:id/delete\", c.remove);"
+    },
+    {
+      "type": "images",
+      "images": [
+        "C:/Programing/University/WEB/Lab_5/report/screenshots/01_admin_users.png"
+      ]
+    },
+    {
+      "type": "text",
+      "text": "Уся область /users захищена одним middleware requireRole([\"ADMIN\"]) на рівні routera: менеджер, який введе /users у адресному рядку, отримує 403, а не порожню сторінку. Список показує всіх користувачів із ролями; пошук ?q= фільтрує за ім'я, email або телефоном (case-insensitive)."
+    },
+    {
+      "type": "task",
+      "number": 2,
+      "text": "Створення та редагування користувача: серверна валідація (ім'я, email, телефон, роль, пароль ≥ 6 символів) та унікальність email."
+    },
+    {
+      "type": "code",
+      "label": "src/controllers/users.ts — серверна валідація",
+      "text": "const errors: string[] = [];\nif (!name) errors.push(\"Вкажіть ім'я\");\nelse if (name.length < 2) errors.push(\"Ім'я: мінімум 2 символи\");\nif (!email) errors.push(\"Вкажіть email (логін)\");\nelse if (!isEmail(email)) errors.push(\"Email: некоректний формат\");\nif (phone && !isPhone(phone)) errors.push(\"Телефон: 10–15 цифр\");\nif (!ROLES.includes(role as (typeof ROLES)[number])) errors.push(\"Оберіть роль\");\nif (opts.requirePassword) {\n  if (!password) errors.push(\"Вкажіть пароль\");\n  else if (password.length < 6) errors.push(\"Пароль: мінімум 6 символів\");\n} else if (password && password.length < 6) {\n  errors.push(\"Пароль: мінімум 6 символів (або залиште порожнім, щоб зберегти старий)\");\n}"
+    },
+    {
+      "type": "images",
+      "images": [
+        "C:/Programing/University/WEB/Lab_5/report/screenshots/02_admin_user_new.png",
+        "C:/Programing/University/WEB/Lab_5/report/screenshots/03_user_400_errors.png"
+      ]
+    },
+    {
+      "type": "text",
+      "text": "Форма створення користувача і відмова за некоректними значеннями: email без «@» та короткий пароль «123» повертають статус 400 із серверним списком помилок і збереженими значеннями полів (паттерн Lab 3). Унікальність email перевіряється перехопленням P2002 (isUniqueViolation) — повторний email дає 400 «Користувач з таким email вже існує». При редагуванні порожнє поле пароля означає «зберегти старий»."
+    },
+    {
+      "type": "task",
+      "number": 3,
+      "text": "Безпечне видалення та role-aware керування даними: FK-обмеження (Restrict) не дають стерти користувача з історією, заборона видаляти власний акаунт, UI приховує недозволені дії."
+    },
+    {
+      "type": "images",
+      "images": [
+        "C:/Programing/University/WEB/Lab_5/report/screenshots/04_manager_clients.png",
+        "C:/Programing/University/WEB/Lab_5/report/screenshots/05_client_card.png",
+        "C:/Programing/University/WEB/Lab_5/report/screenshots/06_request_card.png"
+      ]
+    },
+    {
+      "type": "text",
+      "text": "Видалення користувача обмежено двома правилами: власний акаунт видалити неможливо (400 із поясненням), а користувача, прив'язаного до заявок, робіт чи коментарів, — теж, через onDelete: Restrict: історію аудиту зберігаємо, тому замість видалення радимо змінити роль. На скріншотах — захищені дані з погляду менеджера: список клієнтів, картка клієнта з пристроями та історією заявок, повна картка заявки. UI приховує дії, недоступні ролі, через res.locals.can; незалежно від цього, фінальний захист завжди виконує сервер."
+    }
+  ],
+  "conclusion": "На цій лабораторній роботі я реалізував захищену область управління даними системи. Новий модуль /users, доступний лише адміністратору, дає повний CRUD користувачів із серверною валідацією всіх полів, хешуванням пароля bcrypt, унікальністю email та захистом від само-видалення і видалення користувачів, прив'язаних до даних (onDelete: Restrict). Додано role-aware інтерфейс: дії, недоступні ролі, приховуються з екранів через res.locals.can, а остаточний захист виконують серверні вайдери. За матрицею дозволів забезпечено CRUD-покрытие всіх 15 таблиць: довідниками та фінансами керує менеджер, роботою над заявками — майстер, користувачами — адміністратор.",
+  "output": {
+    "dir": "C:/Programing/University/WEB/Lab_5/report",
+    "format": "docx"
+  }
+}

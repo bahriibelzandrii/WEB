@@ -1,0 +1,8 @@
+if error
+  .alert.alert-error= error
+if errors && errors.length > 0
+  .alert.alert-error
+    strong Помилки валідації:
+    ul
+      each e in errors
+        li= e

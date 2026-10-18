@@ -1,0 +1,351 @@
+// Модель даних: Сервіс ремонту та обслуговування комп'ютерної техніки
+// 9 enum + 15 сутностей. Повна спека: docs/DATA_MODEL.md
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+
+}
+
+// ─────────────────────────── Enums (9) ───────────────────────────
+
+enum Role {
+  ADMIN
+  MANAGER
+  TECHNICIAN
+  VISITOR
+}
+
+enum DeviceType {
+  PC
+  LAPTOP
+  MONITOR
+  PHONE
+  TABLET
+  PRINTER
+  OTHER
+}
+
+enum RequestStatus {
+  NEW
+  IN_DIAGNOSTICS
+  ESTIMATE_READY
+  IN_REPAIR
+  READY
+  COMPLETED
+  CANCELED
+}
+
+enum RequestType {
+  REPAIR
+  MAINTENANCE
+  WARRANTY_CLAIM
+}
+
+enum Priority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum WorkStatus {
+  PENDING
+  IN_PROGRESS
+  DONE
+}
+
+enum EstimateStatus {
+  DRAFT
+  APPROVED
+  REJECTED
+}
+
+enum InvoiceStatus {
+  UNPAID
+  PARTIAL
+  PAID
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  BANK_TRANSFER
+}
+
+// ─────────────────────────── Сутності (15) ───────────────────────────
+
+// Співробітник сервісу
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  phone     String?
+  role      Role     @default(MANAGER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  createdRequests  Request[]     @relation("RequestCreatedBy")
+  assignedRequests Request[]     @relation("RequestAssignedTo")
+  works            RequestWork[]
+  diagnostics      Diagnostics[]
+  estimates        Estimate[]
+  comments         Comment[]
+  attachments      FileAttachment[]
+}
+
+// Клієнт (особа чи компанія), без акаунта
+model Client {
+  id        String    @id @default(cuid())
+  name      String
+  phone     String
+  email     String?   @unique
+  address   String?
+  notes     String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime? // soft delete
+
+  devices  Device[]
+  requests Request[]
+}
+
+// Конкретний прилад клієнта (історія: 1—N заявок)
+model Device {
+  id           String     @id @default(cuid())
+  type         DeviceType
+  brand        String
+  model        String
+  serialNumber String?
+  specs        String?
+  purchasedAt  DateTime?
+  ownerId      String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  deletedAt    DateTime? // soft delete
+
+  owner    Client    @relation(fields: [ownerId], references: [id], onDelete: Restrict)
+  requests Request[]
+
+  @@index([serialNumber])
+  @@index([ownerId])
+}
+
+// Заявка — центр моделі
+model Request {
+  id                String        @id @default(cuid())
+  number            String        @unique // R-YYYY-NNNN
+  type              RequestType
+  status            RequestStatus @default(NEW)
+  priority          Priority      @default(NORMAL)
+  description       String?
+  clientId          String
+  deviceId          String
+  originalRequestId String? // для WARRANTY_CLAIM
+  createdById       String
+  assignedToId      String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  deletedAt         DateTime? // soft delete
+
+  client          Client       @relation(fields: [clientId], references: [id], onDelete: Restrict)
+  device          Device       @relation(fields: [deviceId], references: [id], onDelete: Restrict)
+  originalRequest  Request?     @relation("WarrantyClaims", fields: [originalRequestId], references: [id], onDelete: Restrict)
+  warrantyClaims   Request[]    @relation("WarrantyClaims")
+  createdBy        User         @relation("RequestCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  assignedTo       User?        @relation("RequestAssignedTo", fields: [assignedToId], references: [id], onDelete: Restrict)
+  diagnostics      Diagnostics?
+  works            RequestWork[]
+  parts            RequestPart[]
+  estimate         Estimate?
+  invoice          Invoice?
+  warranty         Warranty?
+  comments         Comment[]
+  attachments      FileAttachment[]
+
+  @@index([status])
+  @@index([clientId])
+  @@index([deviceId])
+  @@index([createdAt])
+}
+
+// Діагностика (1—1 із заявкою)
+model Diagnostics {
+  id           String    @id @default(cuid())
+  requestId    String    @unique
+  technicianId String?
+  date         DateTime  @default(now())
+  findings     String
+  cost         Decimal   @default(0) @db.Decimal(10, 2)
+  notes        String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  request    Request @relation(fields: [requestId], references: [id], onDelete: Restrict)
+  technician User?   @relation(fields: [technicianId], references: [id], onDelete: Restrict)
+}
+
+// Прайс-лист робіт
+model WorkCatalog {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  basePrice   Decimal  @db.Decimal(10, 2)
+  baseHours   Float    @default(1)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  requestWorks RequestWork[]
+}
+
+// Робота в заявці (снапшот назви/ціни)
+model RequestWork {
+  id           String     @id @default(cuid())
+  requestId    String
+  catalogId    String?
+  name         String
+  cost         Decimal    @db.Decimal(10, 2)
+  hours        Float
+  technicianId String?
+  status       WorkStatus @default(PENDING)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  request    Request      @relation(fields: [requestId], references: [id], onDelete: Restrict)
+  catalog    WorkCatalog? @relation(fields: [catalogId], references: [id], onDelete: Restrict)
+  technician User?        @relation(fields: [technicianId], references: [id], onDelete: Restrict)
+
+  @@index([requestId])
+}
+
+// Каталог запчастин (без складу)
+model Part {
+  id        String   @id @default(cuid())
+  name      String
+  sku       String?  @unique
+  price     Decimal  @db.Decimal(10, 2)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  requestParts RequestPart[]
+}
+
+// Запчастини в заявці (снапшот ціни)
+model RequestPart {
+  id        String   @id @default(cuid())
+  requestId String
+  partId    String
+  quantity  Int      @default(1)
+  unitPrice Decimal  @db.Decimal(10, 2)
+  createdAt DateTime @default(now())
+
+  request Request @relation(fields: [requestId], references: [id], onDelete: Restrict)
+  part    Part    @relation(fields: [partId], references: [id], onDelete: Restrict)
+
+  @@unique([requestId, partId])
+  @@index([requestId])
+}
+
+// Оцінка (1—1 із заявкою)
+model Estimate {
+  id          String         @id @default(cuid())
+  requestId   String         @unique
+  status      EstimateStatus @default(DRAFT)
+  totalWorks  Decimal        @default(0) @db.Decimal(10, 2)
+  totalParts  Decimal        @default(0) @db.Decimal(10, 2)
+  total       Decimal        @db.Decimal(10, 2)
+  createdById String
+  approvedAt  DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  request   Request  @relation(fields: [requestId], references: [id], onDelete: Restrict)
+  createdBy User     @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  invoice   Invoice?
+}
+
+// Рахунок (1—1 із заявкою)
+model Invoice {
+  id         String        @id @default(cuid())
+  requestId  String        @unique
+  estimateId String?       @unique
+  total      Decimal       @db.Decimal(10, 2)
+  discount   Decimal       @default(0) @db.Decimal(10, 2)
+  finalTotal Decimal       @db.Decimal(10, 2)
+  status     InvoiceStatus @default(UNPAID)
+  issueDate  DateTime      @default(now())
+  dueDate    DateTime?
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  request  Request   @relation(fields: [requestId], references: [id], onDelete: Restrict)
+  estimate Estimate? @relation(fields: [estimateId], references: [id], onDelete: Restrict)
+  payments Payment[]
+
+  @@index([requestId])
+}
+
+// Оплата (історичний запис)
+model Payment {
+  id        String        @id @default(cuid())
+  invoiceId String
+  amount    Decimal       @db.Decimal(10, 2)
+  method    PaymentMethod
+  paidAt    DateTime      @default(now())
+  note      String?
+  createdAt DateTime      @default(now())
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
+
+  @@index([invoiceId])
+}
+
+// Гарантія на ремонт (1—1 із завершеною заявкою)
+model Warranty {
+  id         String   @id @default(cuid())
+  requestId  String   @unique
+  periodDays Int
+  startDate  DateTime
+  endDate    DateTime
+  scope      String?
+  createdAt  DateTime @default(now())
+
+  request Request @relation(fields: [requestId], references: [id], onDelete: Restrict)
+}
+
+// Коментар до заявки
+model Comment {
+  id         String   @id @default(cuid())
+  requestId  String
+  authorId   String
+  text       String
+  isInternal Boolean  @default(true)
+  createdAt  DateTime @default(now())
+
+  request Request @relation(fields: [requestId], references: [id], onDelete: Restrict)
+  author  User    @relation(fields: [authorId], references: [id], onDelete: Restrict)
+
+  @@index([requestId])
+}
+
+// Файл до заявки (фото дефектів, документи)
+model FileAttachment {
+  id           String   @id @default(cuid())
+  requestId    String
+  fileName     String
+  filePath     String
+  mimeType     String?
+  size         Int?
+  uploadedById String
+  createdAt    DateTime @default(now())
+
+  request    Request @relation(fields: [requestId], references: [id], onDelete: Restrict)
+  uploadedBy User    @relation(fields: [uploadedById], references: [id], onDelete: Restrict)
+
+  @@index([requestId])
+}

@@ -1,0 +1,23 @@
+extends ../layout
+
+block title
+  title Нова запчастина — Сервіс ремонту техніки
+
+block content
+  .page-head
+    h1 Нова запчастина
+
+  form(method="post", action="/parts")
+    .form-grid
+      .field
+        label Назва
+        input(type="text", name="name", value=(values && values.name || ""))
+      .field
+        label SKU
+        input(type="text", name="sku", value=(values && values.sku || ""))
+      .field
+        label Ціна, ₴
+        input(type="text", name="price", inputmode="decimal", placeholder="0.00", value=(values && values.price || ""))
+    .form-actions
+      button.btn.btn-primary(type="submit") Створити запчастину
+      a.btn(href="/parts") Скасувати

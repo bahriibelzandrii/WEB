@@ -1,0 +1,45 @@
+services:
+  db:
+    image: postgres:18
+    container_name: lab1_service_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: lab1_service
+    ports:
+      # 5433: на хості 5432 часто зайнятий іншою PostgreSQL (напр. Windows-сервіс)
+      - "5433:5432"
+    volumes:
+      # PostgreSQL 18: том на батьківському каталозі (layout pg_ctlcluster)
+      - db_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d lab1_service"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build: .
+    container_name: lab2_service_app
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # У compose-мережі БД доступна як db:5432 (не localhost:5433)
+      DATABASE_URL: "postgresql://postgres:postgres@db:5432/lab1_service?schema=public"
+      PORT: "3000"
+    volumes:
+      # Завантажені файли заявок зберігаються між перезапусками (D42)
+      - uploads:/app/uploads
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 30s
+
+volumes:
+  db_data:
+  uploads:

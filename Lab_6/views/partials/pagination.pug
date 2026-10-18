@@ -1,0 +1,13 @@
+mixin pagination(page, totalPages, base, pageNumbers, shownFrom, shownTo, total)
+  if totalPages > 1
+    .pagination
+      if page > 1
+        a(href=base + "page=" + (page - 1)) ‹
+      each p in pageNumbers
+        if p === page
+          a.current(href=base + "page=" + p)= p
+        else
+          a(href=base + "page=" + p)= p
+      if page < totalPages
+        a(href=base + "page=" + (page + 1)) ›
+      span.info Показано #{shownFrom}–#{shownTo} з #{total}

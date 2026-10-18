@@ -1,0 +1,31 @@
+extends ../layout
+
+block title
+  title= "Редагування: " + c.name + " — Сервіс ремонту техніки"
+
+block content
+  .page-head
+    h1 Редагування: #{c.name}
+
+  form(method="post", action="/clients/" + c.id + "/edit")
+    .form-grid
+      .field
+        label Ім'я / назва
+        input(type="text", name="name", value=((values ? values.name : c.name) || ""))
+      .field
+        label Телефон
+        input(type="text", name="phone", placeholder="+380671234501", value=((values ? values.phone : c.phone) || ""))
+      .field
+        label Email
+        input(type="email", name="email", value=((values ? values.email : c.email) || ""))
+      .field
+        label Адреса
+        input(type="text", name="address", value=((values ? values.address : c.address) || ""))
+      .field.field-wide
+        label Примітки
+        textarea(name="notes", rows="3")= ((values ? values.notes : c.notes) || "")
+
+    .form-actions
+      a.btn.btn-danger(href="/clients/" + c.id + "/delete") Видалити
+      button.btn.btn-primary(type="submit") Зберегти
+      a.btn(href="/clients/" + c.id) Скасувати

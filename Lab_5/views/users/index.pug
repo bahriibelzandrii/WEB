@@ -1,0 +1,43 @@
+extends ../layout
+
+block title
+  title Користувачі — Сервіс ремонту техніки
+
+block content
+  .page-head
+    .page-head-top
+      h1 Користувачі
+      a.btn.btn-primary(href="/users/new") Новий користувач
+
+  form.filters(method="get", action="/users")
+    .field
+      label Пошук
+      input(type="search", name="q", placeholder="Ім'я, email, телефон", value=(q || ""))
+    button.btn(type="submit") Застосувати
+
+  table.table
+    thead
+      tr
+        th Ім'я
+        th Email (логін)
+        th Телефон
+        th Роль
+        th Створено
+        th.act Дії
+    tbody
+      each u in items
+        tr
+          td= u.name
+          td= u.email
+          td= u.phone || "—"
+          td
+            .badge= roleLabels[u.role]
+          td= dateTime(u.createdAt)
+          td.act
+            a.btn-small.btn(href="/users/" + u.id + "/edit") Редагувати
+            a.btn-small.btn-danger(href="/users/" + u.id + "/delete") Видалити
+      if items.length === 0
+        tr
+          td(colspan=6).empty
+            | Нікого не знайдено
+            a(href="/users") Скинути пошук

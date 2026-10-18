@@ -1,0 +1,26 @@
+extends ../layout
+
+block title
+  title Вхід — Сервіс ремонту техніки
+
+block content
+  .auth-card
+    h1 Вхід у систему
+    if loggedout === "1" || (typeof loggedout !== "undefined" && loggedout)
+      .alert.alert-ok Ви вийшли з системи
+    include ../partials/flash
+    form(method="post", action="/login")
+      input(type="hidden", name="next", value=(next || "/"))
+      .field
+        label Email
+        input(type="email", name="email", value=((values && values.email) || ""), placeholder="admin@service.ua")
+      .field
+        label Пароль
+        input(type="password", name="password")
+      .form-actions
+        button.btn.btn-primary(type="submit") Увійти
+        a.btn(href="/register") Зареєструватись
+      p.auth-hint
+        | Демонстраційні акаунти:
+        a(href="/") admin@, manager@, tech1@, tech2@, visitor@ (домен service.ua, пароль
+        code secret)

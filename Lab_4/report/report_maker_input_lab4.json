@@ -1,0 +1,84 @@
+{
+  "meta": {
+    "course_code": "ВЕБ",
+    "course_name": "Вебтехнології",
+    "lab_number": 4,
+    "topic": "Авторизація та контроль доступу",
+    "author": "Багрія-Белз Андрій",
+    "group": "КН-2327Б",
+    "variant": null,
+    "objective": "Реалізувати авторизацію користувачів (Passport.js, express-session, bcryptjs) та контроль доступу за ролями: четверта роль Відвідувач, захист мутуючих маршрутів, сторінка 403.",
+    "title_word": "ЗВІТ",
+    "title_style": "standard"
+  },
+  "body": [
+    {
+      "type": "task",
+      "number": 1,
+      "text": "Вхід та вихід користувачів: форма /login (email + пароль), локальна стратегія Passport.js, перевірка хеша bcryptjs, сесії express-session; публічна реєстрація з присвоєнням ролі Відвідувач."
+    },
+    {
+      "type": "images",
+      "images": [
+        "C:/Programing/University/WEB/Lab_4/report/screenshots/01_login_form.png",
+        "C:/Programing/University/WEB/Lab_4/report/screenshots/02_login_error.png"
+      ]
+    },
+    {
+      "type": "text",
+      "text": "Форма входу та відмова за невірними даними: статус 401 і повторний рендер форми з банером «Невірний email або пароль». У сесії зберігається лише id користувача (serializeUser/deserializeUser), а роль читається з БД при кожному запиті, тому зміна ролі в адмінці діє негайно. Cookie сесії: httpOnly, sameSite=lax, живучість 8 годин."
+    },
+    {
+      "type": "task",
+      "number": 2,
+      "text": "Захист маршрутів за ролями: middleware requireRole(roles) — неавторизованого редіректить на /login?next=..., авторизованого без потрібної ролі — на сторінку 403."
+    },
+    {
+      "type": "code",
+      "label": "src/lib/auth.ts — middleware захисту маршруту",
+      "text": "export function requireRole(roles: readonly string[]) {\n  return (req: Request, res: Response, next: NextFunction) => {\n    if (!req.user) {\n      const nextUrl = req.originalUrl;\n      return res.redirect(`/login?next=${encodeURIComponent(nextUrl)}`);\n    }\n    if (!roles.includes(req.user.role)) {\n      return res\n        .status(403)\n        .render(\"errors/403\", {\n          nav: \"none\",\n          requiredRoles: roles.map((r) => ROLE_LABELS[r] ?? r).join(\", \"),\n        });\n    }\n    next();\n  };\n}"
+    },
+    {
+      "type": "code",
+      "label": "src/routes/clients.ts — матриця дозволів на маршрутах",
+      "text": "import { requireRole, ROLES } from \"../lib/auth.js\";\n\n// Матриця дозволів (Lab 4): клієнти веде менеджер і адміністратор.\nconst router = Router();\nrouter.get(\"/\", index);                          // перегляд — всі\nrouter.get(\"/new\", requireRole(ROLES.MANAGER), createForm);\nrouter.post(\"/\", requireRole(ROLES.MANAGER), create);\nrouter.get(\"/:id\", show);\nrouter.get(\"/:id/edit\", requireRole(ROLES.MANAGER), editForm);\nrouter.post(\"/:id/edit\", requireRole(ROLES.MANAGER), edit);\nrouter.post(\"/:id/delete\", requireRole(ROLES.MANAGER), remove);"
+    },
+    {
+      "type": "images",
+      "images": [
+        "C:/Programing/University/WEB/Lab_4/report/screenshots/03_visitor_requests.png",
+        "C:/Programing/University/WEB/Lab_4/report/screenshots/05_visitor_403.png"
+      ]
+    },
+    {
+      "type": "text",
+      "text": "Відвідувач (роль VISITOR) має лише перегляд: список заявок відкривається без входу та після входу, а спроба перейти на створення заявки завершується сторінкою 403, де названо, яка роль потрібна. Гість натомість отримує редірект на /login?next=... і після входу повертається на цю саму сторінку."
+    },
+    {
+      "type": "task",
+      "number": 3,
+      "text": "Матриця дозволів для 4 ролей і role-aware інтерфейс: меню й дії відображаються лише тим, хто може їх виконати; фінальний захист — завжди на сервері."
+    },
+    {
+      "type": "code",
+      "label": "src/lib/auth.ts — групи ролей",
+      "text": "export const ROLES = {\n  /** Майстер і вище (операції зі статусом/смігом заявок). */\n  TECH: [\"ADMIN\", \"MANAGER\", \"TECHNICIAN\"],\n  /** Менеджер і вище (довідники, фінанси). */\n  MANAGER: [\"ADMIN\", \"MANAGER\"],\n} as const;"
+    },
+    {
+      "type": "images",
+      "images": [
+        "C:/Programing/University/WEB/Lab_4/report/screenshots/04_manager_clients.png",
+        "C:/Programing/University/WEB/Lab_4/report/screenshots/06_admin_users.png"
+      ]
+    },
+    {
+      "type": "text",
+      "text": "Права наростають за ролями: Відвідувач — лише перегляд; Майстер — статус заявок, роботи/запчастини, діагностика, коментарі; Менеджер — повне управління заявками, клієнтами, пристроями, каталогами та фінансами; Адміністратор — усе, включно з модулем користувачів (Lab 5). На скріншотах — список клієнтів від імені менеджера та модуль користувачів, доступний лише адміністратору."
+    }
+  ],
+  "conclusion": "На цій лабораторній роботі я реалізував авторизацію користувачів за допомогою Passport.js (локальна стратегія email+пароль, bcryptjs) та сесій express-session, міграцією додав четверту роль Відвідувач і заклав її в seed. Захист маршрутів зроблено middleware requireRole(roles): гостя редіректить на /login?next=..., а авторизованого користувача без потрібної ролі — на сторінку 403 із зазначенням, яка роль потрібна. Усі чотири ролі перевірено на живому застосунку: відвідувач бачить лише перегляд, майстер керує роботою над заявками, менеджер — довідниками та фінансами, адміністратор — усе включно з користувачами. Закріпив механіку сесій (httpOnly-cookie, serialize/deserialize, роль з БД на кожному запиті) і паттерн «одна матриця дозволів на всіх мутуючих маршрутах».",
+  "output": {
+    "dir": "C:/Programing/University/WEB/Lab_4/report",
+    "format": "docx"
+  }
+}

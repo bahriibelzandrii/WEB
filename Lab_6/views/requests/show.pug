@@ -1,0 +1,389 @@
+extends ../layout
+
+block title
+  title= r.number + " — Сервіс ремонту техніки"
+
+mixin section(title)
+  section.block
+    h2= title
+    block
+
+block content
+  .page-head
+    .page-head-top
+      h1= r.number
+      a.btn(href="/requests") ← Назад
+    .badges
+      .badge(class="badge-status-" + r.status.toLowerCase())= statusLabels[r.status]
+      .badge= typeLabels[r.type]
+      .badge(class="badge-priority-" + r.priority.toLowerCase())= priorityLabels[r.priority]
+    .meta
+      span Створено: #{dateTime(r.createdAt)}
+      span Менеджер: #{r.createdBy.name}
+      span Майстер: #{r.assignedTo ? r.assignedTo.name : "не призначено"}
+    .page-actions
+      if can.manage
+        a.btn.btn-primary(href="/requests/" + r.id + "/edit") Редагувати
+        a.btn.btn-danger(href="/requests/" + r.id + "/delete") Видалити
+      if can.work && next.length > 0
+        .status-actions
+          span.status-label Статус:
+          each s in next
+            form.inline(method="post", action="/requests/" + r.id + "/transition")
+              input(type="hidden", name="status", value=s)
+              button.btn.btn-small(type="submit", class=(s === "CANCELED" ? "btn-danger" : ""))= statusLabels[s]
+
+  +section("Клієнт")
+    p
+      strong= r.client.name
+      |  ·  #{r.client.phone}
+      if r.client.email
+        |  ·  #{r.client.email}
+      if r.client.address
+        |  ·  #{r.client.address}
+    p
+      a(href="/clients/" + r.client.id) Картка клієнта →
+
+  +section("Пристрій")
+    p
+      strong= r.device.brand + " " + r.device.model
+      |  ·  #{deviceTypeLabels[r.device.type]}
+      if r.device.serialNumber
+        |  ·  серійний № #{r.device.serialNumber}
+      if r.device.purchasedAt
+        |  ·  куплений: #{dateOnly(r.device.purchasedAt)}
+    if r.device.specs
+      p.specs= r.device.specs
+    p
+      a(href="/devices/" + r.device.id) Картка пристрою →
+
+  +section("Опис")
+    p.description= r.description
+
+  if r.originalRequest
+    +section("Гарантійне посилання")
+      p
+        | Оригінальний ремонт:
+        a(href="/requests/" + r.originalRequest.id)= r.originalRequest.number
+        |  ·  статус: #{statusLabels[r.originalRequest.status]}
+        |  ·  клієнт: #{r.originalRequest.client.name}
+
+  +section("Діагностика")
+    if r.diagnostics
+      table.table
+        tbody
+          tr
+            th Дата
+            td= dateOnly(r.diagnostics.date)
+          tr
+            th Майстер
+            td= r.diagnostics.technician ? r.diagnostics.technician.name : "—"
+          tr
+            th Висновки
+            td= r.diagnostics.findings
+          tr
+            th Вартість
+            td.num= uah(r.diagnostics.cost)
+          if r.diagnostics.notes
+            tr
+              th Примітка
+              td= r.diagnostics.notes
+    else
+      p.empty-text Діагностика ще не проведена
+    if can.work
+      form(method="post", action="/requests/" + r.id + "/diagnostics")
+        .form-grid
+          .field
+            label Майстер
+            select(name="technicianId")
+              option(value="") — не вказано —
+              each t in technicians
+                option(value=t.id, selected=(diagValues ? diagValues.technicianId === t.id : r.diagnostics && r.diagnostics.technicianId === t.id))= t.name
+          .field
+            label Дата
+            input(type="date", name="date", value=(diagValues ? diagValues.date : (r.diagnostics ? dateOnly(r.diagnostics.date) : today)))
+          .field
+            label Вартість, ₴
+            input(type="text", name="cost", placeholder="0", value=(diagValues ? diagValues.cost : (r.diagnostics ? String(r.diagnostics.cost) : "")))
+          .field.field-wide
+            label Висновки
+            textarea(name="findings", rows="3")= diagValues ? diagValues.findings : (r.diagnostics ? r.diagnostics.findings : "")
+          .field.field-wide
+            label Примітки
+            textarea(name="notes", rows="2")= diagValues ? diagValues.notes : (r.diagnostics && r.diagnostics.notes || "")
+        .section-actions
+          button.btn.btn-primary(type="submit")= r.diagnostics ? "Оновити діагностику" : "Додати діагностику"
+
+  +section("Роботи")
+    if can.work
+      form(method="post", action="/requests/" + r.id + "/works")
+        .add-row
+          .field
+            label Робота
+            select#newWork(name="workId")
+              option(value="") Робота з каталогу…
+              each w in catalogWorks
+                option(value=w.id, data-price=w.basePrice, data-hours=w.baseHours, selected=(addWorkValues && addWorkValues.workId === w.id))= w.name
+          .field
+            label Сума, ₴
+            input#newWorkCost(type="text", name="cost", placeholder="0", value=(addWorkValues ? addWorkValues.cost : ""))
+          .field
+            label Години
+            input#newWorkHours(type="text", name="hours", placeholder="0", value=(addWorkValues ? addWorkValues.hours : ""))
+          button.btn(type="submit") Додати роботу
+    if r.works.length > 0
+      table.table
+        thead
+          tr
+            th Робота
+            th.num Години
+            th Майстер
+            th Статус
+            th.num Сума
+            th.act
+        tbody
+          each w in r.works
+            tr
+              td= w.name
+              td.num= w.hours
+              td= w.technician ? w.technician.name : "—"
+              td= workStatusLabels[w.status]
+              td.num= uah(w.cost)
+              td.act
+                if can.work
+                  form.inline(method="post", action="/requests/" + r.id + "/works/" + w.id + "/delete")
+                    button.btn.btn-small.btn-danger(type="submit") ×
+      p.total Разом за роботи: #{uah(r.works.reduce((s, w) => s + Number(w.cost), 0))}
+    else
+      p.empty-text Роботи ще не додані
+
+  +section("Запчастини")
+    if can.work
+      form(method="post", action="/requests/" + r.id + "/parts")
+        .add-row
+          .field
+            label Запчастина
+            select#newPart(name="partId")
+              option(value="") Запчастина з каталогу…
+              each p in catalogParts
+                option(value=p.id, data-price=p.price, selected=(addPartValues && addPartValues.partId === p.id))= p.name
+          .field
+            label К-сть
+            input(type="text", name="quantity", placeholder="1", value=((addPartValues && addPartValues.quantity) || "1"))
+          .field
+            label Ціна, ₴
+            input#newPartPrice(type="text", name="unitPrice", placeholder="0", value=(addPartValues ? addPartValues.unitPrice : ""))
+          button.btn(type="submit") Додати запчастину
+    if r.parts.length > 0
+      table.table
+        thead
+          tr
+            th Запчастина
+            th SKU
+            th.num К-сть
+            th.num Ціна
+            th.num Сума
+            th.act
+        tbody
+          each p in r.parts
+            tr
+              td= p.part.name
+              td= p.part.sku || "—"
+              td.num= p.quantity
+              td.num= uah(p.unitPrice)
+              td.num= uah(p.quantity * Number(p.unitPrice))
+              td.act
+                if can.work
+                  form.inline(method="post", action="/requests/" + r.id + "/parts/" + p.id + "/delete")
+                    button.btn.btn-small.btn-danger(type="submit") ×
+      p.total Разом за запчастини: #{uah(r.parts.reduce((s, p) => s + p.quantity * Number(p.unitPrice), 0))}
+    else
+      p.empty-text Запчастини ще не додані
+
+  +section("Оцінка")
+    if r.estimate
+      .badges
+        .badge= estimateStatusLabels[r.estimate.status]
+      p
+        | Роботи: #{uah(r.estimate.totalWorks)}
+        |  ·  Запчастини: #{uah(r.estimate.totalParts)}
+        |  ·  Разом: #{uah(r.estimate.total)}
+      p.meta
+        | Створив: #{r.estimate.createdBy ? r.estimate.createdBy.name : "—"}
+        |  ·  #{dateTime(r.estimate.createdAt)}
+        if r.estimate.approvedAt
+          |  ·  Затверджено: #{dateTime(r.estimate.approvedAt)}
+      if r.estimate.status !== "APPROVED" && can.manage
+        .section-actions
+          form.inline(method="post", action="/requests/" + r.id + "/estimate/approve")
+            button.btn.btn-primary(type="submit") Затвердити
+          form.inline(method="post", action="/requests/" + r.id + "/estimate/reject")
+            button.btn(type="submit") Відхилити
+          form.inline(method="post", action="/requests/" + r.id + "/estimate")
+            button.btn(type="submit") Оновити суми
+    else
+      if r.works.length + r.parts.length > 0
+        p.empty-text Оцінки ще немає
+        if can.manage
+          form.inline(method="post", action="/requests/" + r.id + "/estimate")
+            button.btn.btn-primary(type="submit") Оформити оцінку
+      else
+        p.empty-text Спочатку додайте роботи або запчастини — оцінку формує їх сума
+
+  +section("Рахунок")
+    if r.invoice
+      .badges
+        .badge= invoiceStatusLabels[r.invoice.status]
+      p
+        | Сума: #{uah(r.invoice.total)}
+        |  ·  Знижка: #{uah(r.invoice.discount)}
+        |  ·  До сплати: #{uah(r.invoice.finalTotal)}
+      p.meta
+        | Видано: #{dateOnly(r.invoice.issueDate)}
+        if r.invoice.dueDate
+          |  ·  Термін сплати: #{dateOnly(r.invoice.dueDate)}
+      if r.invoice.payments.length > 0
+        table.table
+          thead
+            tr
+              th Дата
+              th Спосіб
+              th.num Сума
+              th Примітка
+          tbody
+            each pay in r.invoice.payments
+              tr
+                td= dateTime(pay.paidAt)
+                td= paymentMethodLabels[pay.method]
+                td.num= uah(pay.amount)
+                td= pay.note || "—"
+        p.total Оплачено: #{uah(r.invoice.payments.reduce((s, p) => s + Number(p.amount), 0))}
+      if r.invoice.status !== "PAID" && can.manage
+        form(method="post", action="/requests/" + r.id + "/payments")
+          .add-row
+            .field
+              label Сума, ₴
+              input(type="text", name="amount", placeholder="0")
+            .field
+              label Спосіб
+              select(name="method")
+                each m in paymentMethods
+                  option(value=m)= paymentMethodLabels[m]
+            .field
+              label Примітка
+              input(type="text", name="note", placeholder="—")
+            button.btn.btn-primary(type="submit") Додати оплату
+    else
+      if r.estimate && r.estimate.status === "APPROVED"
+        p.empty-text Рахунку ще немає
+        if can.manage
+          form(method="post", action="/requests/" + r.id + "/invoice")
+            .add-row
+              .field
+                label Знижка, ₴
+                input(type="text", name="discount", placeholder="0")
+              .field
+                label Термін сплати
+                input(type="date", name="dueDate")
+              button.btn.btn-primary(type="submit") Видати рахунок
+      else
+        p.empty-text Для рахунку потрібна затверджена оцінка
+
+  +section("Гарантія")
+    if r.warranty
+      p
+        | Термін: #{r.warranty.periodDays} днів
+        |  ·  з #{dateOnly(r.warranty.startDate)}
+        |  ·  до #{dateOnly(r.warranty.endDate)}
+      if r.warranty.scope
+        p.scope= r.warranty.scope
+    else
+      p.empty-text Гарантія ще не оформлена
+    if can.manage
+      form(method="post", action="/requests/" + r.id + "/warranty")
+        .form-grid
+          .field
+            label Термін, днів
+            select(name="periodDays")
+              each d in [30, 60, 90, 180, 365]
+                option(value=d, selected=(r.warranty ? r.warranty.periodDays === d : d === 90))= d
+          .field
+            label Дата початку
+            input(type="date", name="startDate", value=(r.warranty ? dateOnly(r.warranty.startDate) : today))
+          .field.field-wide
+            label Область дії
+            input(type="text", name="scope", value=(r.warranty && r.warranty.scope || ""))
+        .section-actions
+          button.btn.btn-primary(type="submit")= r.warranty ? "Оновити гарантію" : "Оформити гарантію"
+
+  +section("Коментарі")
+    if r.comments.length > 0
+      each c in r.comments
+        .comment
+          .comment-meta
+            strong= c.author.name
+            |  #{dateTime(c.createdAt)}
+            if c.isInternal
+              .badge.badge-internal внутрішній
+          p= c.text
+    else
+      p.empty-text Коментарів немає
+    if can.work
+      form(method="post", action="/requests/" + r.id + "/comments")
+        .field
+          label Коментар
+          textarea(name="text", rows="2")
+        .section-actions
+          label.inline-radio
+            input(type="checkbox", name="isInternal", checked)
+            |  внутрішній
+          button.btn.btn-primary(type="submit") Додати коментар
+
+  +section("Вкладення")
+    if r.attachments.length > 0
+      table.table
+        thead
+          tr
+            th Файл
+            th.num Розмір
+            th Тип
+            th Завантажив
+        tbody
+          each a in r.attachments
+            tr
+              td
+                a(href="/" + a.filePath)= a.fileName
+              td.num= bytes(a.size)
+              td= a.mimeType || "—"
+              td= a.uploadedBy.name
+    else
+      p.empty-text Вкладень немає
+    if can.work
+      form(method="post", action="/requests/" + r.id + "/attachments", enctype="multipart/form-data")
+        .add-row
+          .field
+            label Файл
+            input(type="file", name="file")
+          button.btn.btn-primary(type="submit") Завантажити
+
+  script.
+    (function () {
+      var workSel = document.getElementById("newWork");
+      if (workSel) {
+        workSel.addEventListener("change", function () {
+          var o = workSel.options[workSel.selectedIndex];
+          var cost = document.getElementById("newWorkCost");
+          var hours = document.getElementById("newWorkHours");
+          if (o && o.dataset.price) cost.value = o.dataset.price;
+          if (o && o.dataset.hours) hours.value = o.dataset.hours;
+        });
+      }
+      var partSel = document.getElementById("newPart");
+      if (partSel) {
+        partSel.addEventListener("change", function () {
+          var o = partSel.options[partSel.selectedIndex];
+          var price = document.getElementById("newPartPrice");
+          if (o && o.dataset.price) price.value = o.dataset.price;
+        });
+      }
+    })();

@@ -1,0 +1,35 @@
+extends ../layout
+
+block title
+  title= "Редагування: " + user.name
+
+block content
+  .page-head
+    h1 Редагування користувача
+    .meta
+      a.btn(href="/users") ← Назад
+
+  form(method="post", action="/users/" + user.id + "/edit")
+    .form-grid
+      .field
+        label Ім'я
+        input(type="text", name="name", value=(values && values.name || ""))
+      .field
+        label Email (логін)
+        input(type="email", name="email", value=(values && values.email || ""))
+      .field
+        label Телефон
+        input(type="text", name="phone", value=(values && values.phone || ""))
+      .field
+        label Роль
+        select(name="role")
+          each rl in roles
+            option(value=rl, selected=(values && values.role === rl))= roleLabels[rl]
+      .field
+        label Новий пароль
+        input(type="password", name="password", placeholder="порожньо — зберегти старий")
+        small поле-dim Змініть пароль, якщо потрібно
+
+    .form-actions
+      button.btn.btn-primary(type="submit") Зберегти зміни
+      a.btn(href="/users") Скасувати

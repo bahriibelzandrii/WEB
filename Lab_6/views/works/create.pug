@@ -1,0 +1,27 @@
+extends ../layout
+
+block title
+  title Нова робота — Сервіс ремонту техніки
+
+block content
+  .page-head
+    h1 Нова робота
+    p.lead Позиція прайс-листа робіт
+
+  form(method="post", action="/works")
+    .form-grid
+      .field
+        label Назва
+        input(type="text", name="name", value=(values && values.name || ""))
+      .field
+        label Базова ціна, ₴
+        input(type="text", name="basePrice", inputmode="decimal", placeholder="0.00", value=(values && values.basePrice || ""))
+      .field
+        label Години
+        input(type="text", name="baseHours", inputmode="decimal", placeholder="1", value=(values && values.baseHours || ""))
+      .field.field-wide
+        label Опис
+        input(type="text", name="description", value=(values && values.description || ""))
+    .form-actions
+      button.btn.btn-primary(type="submit") Додати роботу
+      a.btn(href="/works") Скасувати

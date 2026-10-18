@@ -1,0 +1,47 @@
+extends ../layout
+
+include ../partials/pagination
+
+block title
+  title Клієнти — Сервіс ремонту техніки
+
+block content
+  .page-head
+    .page-head-top
+      h1 Клієнти
+      a.btn.btn-primary(href="/clients/new") Новий клієнт
+  form.filters(method="get", action="/clients")
+    .field
+      label Пошук
+      input(type="search", name="q", placeholder="Ім'я, телефон, email", value=(q || ""))
+    button.btn(type="submit") Застосувати
+
+  table.table
+    thead
+      tr
+        th Ім'я / назва
+        th Телефон
+        th Email
+        th Адреса
+        th.num Пристрої
+        th.num Заявки
+        th.act Дії
+    tbody
+      each c in items
+        tr
+          td
+            a(href="/clients/" + c.id)= c.name
+          td= c.phone
+          td= c.email || "—"
+          td= c.address || "—"
+          td.num= c._count.devices
+          td.num= c._count.requests
+          td.act
+            a.btn-small.btn-danger(href="/clients/" + c.id + "/delete") Видалити
+      if items.length === 0
+        tr
+          td(colspan=7).empty
+            | Нічого не знайдено
+            a(href="/clients") Скинути пошук
+
+  +pagination(page, totalPages, base, pageNumbers, shownFrom, shownTo, total)

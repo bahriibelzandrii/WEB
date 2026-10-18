@@ -1,0 +1,41 @@
+{
+  "name": "lab4-service-web",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Lab 4: авторизація та ролі (Passport.js, сесії, 4 ролі) сервісу ремонту та обслуговування комп'ютерної техніки (Express 5 + Prisma 7 + PostgreSQL 18 + Pug 3)",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "seed": "tsx prisma/seed.ts",
+    "check": "tsx scripts/check-invariants.ts",
+    "prisma:studio": "prisma studio",
+    "check:web": "tsx scripts/web-check.ts"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "7.10.0",
+    "@prisma/client": "7.10.0",
+    "bcryptjs": "^3.0.3",
+    "busboy": "^1.6.0",
+    "dotenv": "17.4.2",
+    "express": "5.2.1",
+    "express-session": "^1.19.0",
+    "passport": "^0.7.0",
+    "passport-local": "^1.0.0",
+    "pug": "3.0.4"
+  },
+  "devDependencies": {
+    "@types/busboy": "^1.5.4",
+    "@types/express": "5.0.6",
+    "@types/express-session": "^1.19.0",
+    "@types/node": "24.13.4",
+    "@types/passport": "^1.0.17",
+    "@types/passport-local": "^1.0.38",
+    "prisma": "7.10.0",
+    "tsx": "4.23.13",
+    "typescript": "7.0.2"
+  }
+}
