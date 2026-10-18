@@ -41,7 +41,7 @@
     {
       "type": "code",
       "label": "src/routes/clients.ts — матриця дозволів на маршрутах",
-      "text": "import { requireRole, ROLES } from \"../lib/auth.js\";\n\n// Матриця дозволів (Lab 4): клієнти веде менеджер і адміністратор.\nconst router = Router();\nrouter.get(\"/\", index);                          // перегляд — всі\nrouter.get(\"/new\", requireRole(ROLES.MANAGER), createForm);\nrouter.post(\"/\", requireRole(ROLES.MANAGER), create);\nrouter.get(\"/:id\", show);\nrouter.get(\"/:id/edit\", requireRole(ROLES.MANAGER), editForm);\nrouter.post(\"/:id/edit\", requireRole(ROLES.MANAGER), edit);\nrouter.post(\"/:id/delete\", requireRole(ROLES.MANAGER), remove);"
+      "text": "import { Router } from \"express\";\nimport { index, show, createForm, create, editForm, edit, remove, confirmRemove } from \"../controllers/clients.js\";\nimport { requireRole, ROLES } from \"../lib/auth.js\";\n\n// Матриця дозволів (Lab 4): перегляд — персонал + відвідувач; зміни — персонал (адмін/майстер).\nconst router = Router();\nrouter.get(\"/\", requireRole(ROLES.VIEW), index);\nrouter.get(\"/new\", requireRole(ROLES.STAFF), createForm);\nrouter.post(\"/\", requireRole(ROLES.STAFF), create);\nrouter.get(\"/:id\", requireRole(ROLES.VIEW), show);\nrouter.get(\"/:id/edit\", requireRole(ROLES.STAFF), editForm);\nrouter.post(\"/:id/edit\", requireRole(ROLES.STAFF), edit);\nrouter.post(\"/:id/delete\", requireRole(ROLES.STAFF), remove);\nrouter.get(\"/:id/delete\", requireRole(ROLES.STAFF), confirmRemove);"
     },
     {
       "type": "images",
@@ -62,7 +62,7 @@
     {
       "type": "code",
       "label": "src/lib/auth.ts — групи ролей",
-      "text": "export const ROLES = {\n  /** Майстер і вище (операції зі статусом/смігом заявок). */\n  TECH: [\"ADMIN\", \"MANAGER\", \"TECHNICIAN\"],\n  /** Менеджер і вище (довідники, фінанси). */\n  MANAGER: [\"ADMIN\", \"MANAGER\"],\n} as const;"
+      "text": "export const ROLES = {\n  /** Персонал: адмін + майстер (каталоги, заявки, фінанси, технічні дії). */\n  STAFF: [\"ADMIN\", \"TECHNICIAN\"],\n  /** Персонал + відвідувач (усі сторінки даних у режимі перегляду). */\n  VIEW: [\"ADMIN\", \"TECHNICIAN\", \"VISITOR\"],\n} as const;"
     },
     {
       "type": "images",
@@ -73,10 +73,57 @@
     },
     {
       "type": "text",
-      "text": "Права наростають за ролями: Відвідувач — лише перегляд; Майстер — статус заявок, роботи/запчастини, діагностика, коментарі; Менеджер — повне управління заявками, клієнтами, пристроями, каталогами та фінансами; Адміністратор — усі права (модуль керування користувачами додається в Lab 5). На скріншотах — список клієнтів від імені менеджера та список заявок від імені адміністратора."
+      "text": "Права наростають за ролями: Відвідувач — лише перегляд; Майстер разом з Адміністратором — усі зміни (довідники, заявки, фінанси, технічні дії); Клієнт — особистий кабінет і власні замовлення. Усі мутуючі маршрути закривають одна й та сама матриця requireRole(ROLES.*). На скріншотах — список клієнтів та список заявок від імені персоналу."
+    },
+    {
+      "type": "task",
+      "number": 4,
+      "text": "Оцінка: дія «Відхилити» видаляє чорновик оцінки з бази даних, заявка повертається в стан «Оцінки ще немає»."
+    },
+    {
+      "type": "code",
+      "label": "src/controllers/requests.ts — відхилення оцінки (DELETE)",
+      "text": "/** Відхилення оцінки: чорновик видаляється з БД, заявку можна оцінити заново. */\nexport async function rejectEstimate(req: Request, res: Response) {\n  const id = req.params.id;\n  const request = await getRequestWithRefs(id);\n  if (!request || !request.estimate) {\n    return res.status(404).render(\"errors/404\", { title: \"Заявку не знайдено\", nav: \"staff\" });\n  }\n  await prisma.estimate.delete({ where: { id: request.estimate.id } });\n  return res.redirect(`/requests/${id}`);\n}"
+    },
+    {
+      "type": "images",
+      "images": [
+        "C:/Programing/University/WEB/Lab_4/report/screenshots/09_estimate_rejected_empty.png"
+      ]
+    },
+    {
+      "type": "text",
+      "text": "Після відхилення секція «Оцінка» на картці заявки показує «Оцінки ще немає» та кнопку «Оформити оцінку» — повторне оцінення цієї ж заявки можливе з чистого початку. Кнопка відхилення доступна лише персоналу (маршрут закриває requireRole(ROLES.STAFF))."
+    },
+    {
+      "type": "task",
+      "number": 5,
+      "text": "Особистий кабінет — лише для ролі Клієнт (CLIENT); доопрацювання інтерфейсу основних сторінок."
+    },
+    {
+      "type": "images",
+      "images": [
+        "C:/Programing/University/WEB/Lab_4/report/screenshots/07_login_quick.png",
+        "C:/Programing/University/WEB/Lab_4/report/screenshots/08_request_form_full.png"
+      ]
+    },
+    {
+      "type": "text",
+      "text": "Сторінка входу містить кнопки швидкого входу за демо-ролями, що полегшує перевірку прав доступу. Поля форм (наприклад, на сторінці створення заявки) займають повну ширину сторінки."
+    },
+    {
+      "type": "images",
+      "images": [
+        "C:/Programing/University/WEB/Lab_4/report/screenshots/10_dashboard.png",
+        "C:/Programing/University/WEB/Lab_4/report/screenshots/11_cabinet_client.png"
+      ]
+    },
+    {
+      "type": "text",
+      "text": "Дашборд починається одразу з блоків статистики. У кабінеті клієнта — картки профілю та зміни пароля і блок «Мої замовлення» зі статистикою власних заявок за статусами; гостю, персоналу та відвідувачу замість кабінету редіректує на домашню сторінку."
     }
   ],
-  "conclusion": "На цій лабораторній роботі я реалізував авторизацію користувачів за допомогою Passport.js (локальна стратегія email+пароль, bcryptjs) та сесій express-session, міграцією додав четверту роль Відвідувач і заклав її в seed. Захист маршрутів зроблено middleware requireRole(roles): гостя редіректить на /login?next=..., а авторизованого користувача без потрібної ролі — на сторінку 403 із зазначенням, яка роль потрібна. Усі чотири ролі перевірено на живому застосунку: відвідувач бачить лише перегляд, майстер керує роботою над заявками, менеджер — довідниками та фінансами, адміністратор — має всі права. Закріпив механіку сесій (httpOnly-cookie, serialize/deserialize, роль з БД на кожному запиті) і паттерн «одна матриця дозволів на всіх мутуючих маршрутах».",
+  "conclusion": "На цій лабораторній роботі я реалізував авторизацію користувачів за допомогою Passport.js (локальна стратегія email+пароль, bcryptjs) та сесій express-session, міграцією додав четверту роль Відвідувач і заклав її в seed. Захист маршрутів зроблено middleware requireRole(roles): гостя редіректить на /login?next=..., а авторизованого користувача без потрібної ролі — на сторінку 403 із зазначенням, яка роль потрібна. Усі чотири ролі перевірено на живому застосунку: відвідувач бачить лише перегляд, майстер разом із адміністратором керує заявками, довідниками та фінансами, клієнт — лише своїм кабінетом і власними замовленнями, адміністратор — має всі права. Закріпив механіку сесій (httpOnly-cookie, serialize/deserialize, роль з БД на кожному запиті) і паттерн «одна матриця дозволів на всіх мутуючих маршрутах».",
   "output": {
     "dir": "C:/Programing/University/WEB/Lab_4/report",
     "format": "docx"
