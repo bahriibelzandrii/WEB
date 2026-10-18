@@ -44,7 +44,7 @@
 | POST | `/requests/:id/diagnostics` | `requests.saveDiagnostics` | upsert діагностики (Lab 3) |
 | POST | `/requests/:id/estimate` | `requests.saveEstimate` | створити/оновити оцінку (Lab 3) |
 | POST | `/requests/:id/estimate/approve` | `requests.approveEstimate` | затвердити оцінку (Lab 3) |
-| POST | `/requests/:id/estimate/reject` | `requests.rejectEstimate` | відхилити оцінку (Lab 3) |
+| POST | `/requests/:id/estimate/reject` | `requests.rejectEstimate` | відхилити (видалити) оцінку (Lab 3) |
 | POST | `/requests/:id/invoice` | `requests.createInvoice` | видати рахунок (Lab 3) |
 | POST | `/requests/:id/payments` | `requests.addPayment` | додати платіж (Lab 3) |
 | POST | `/requests/:id/warranty` | `requests.saveWarranty` | upsert гарантії (Lab 3) |
@@ -240,11 +240,12 @@ prisma.request.findUnique({
     + «К-сть» / «Ціна, ₴» + кнопка «Додати запчастину» (POST `/requests/:id/parts`);
     таблиця `Запчастина | SKU | К-сть | Ціна | Сума | ×`
     + «Разом за запчастини: Σ qty×price»; × — POST `/requests/:id/parts/:lineId/delete`.
-9. **Оцінка** (1—1): бейдж статусу (Чорновик/Затверджена/Відхилена), Σ робіт, Σ запчастин,
+9. **Оцінка** (1—1): бейдж статусу (Чорновик/Затверджена), Σ робіт, Σ запчастин,
    **разом**, дата/автор затвердження. Кнопки (поки не APPROVED): «Затвердити»
-   (`POST /requests/:id/estimate/approve`), «Відхилити» (`POST /requests/:id/estimate/reject`),
-   «Оновити суми» (`POST /requests/:id/estimate` — перерахунок з рядків). Порожня (рядків немає)
-   → підказка «Додайте роботи або запчастини».
+   (`POST /requests/:id/estimate/approve`), «Відхилити»
+   (`POST /requests/:id/estimate/reject` — оцінку з заявки **видаляють**, якщо з неї вже
+   видано рахунок — 400), «Оновити суми» (`POST /requests/:id/estimate` — перерахунок з рядків).
+   Порожня (рядків немає) → підказка «Додайте роботи або запчастини».
 10. **Рахунок** (1—1): сума, знижка, **до сплати**, статус (Не сплачено/Частково сплачено/Сплачено),
     дата видачі, термін оплати; таблиця платежів `Дата | Сума | Метод | Нотатка`
     + «Оплачено: Σ amount» + форма платежа (amount, method CASH/CARD/BANK) — доки `status ≠ PAID`
@@ -534,7 +535,8 @@ D2). Hard delete каталогів — безпечний, бо snapshot'и з�
 - **Діагностика** — upsert 1—1: висновки ≥ 2 символи, вартість ≥ 0 (до 2 знаків),
   майстер (select техніків, порожньо = не вказано), дата (default today, `parseDateOnly`).
 - **Оцінка** — створюється/оновлюється з рядків заяви (Σ робіт + Σ запчастин, `round2`);
-  approve/reject — лише доки не APPROVED / не REJECTED; повторна дія → 400.
+  approve/reject — approve лише доки не APPROVED; reject видаляє оцінку
+  (не можна, якщо видано рахунок); повторна дія → 400.
 - **Рахунок** — тільки з затвердженої оцінки; знижка ≤ total оцінки; повторна видача → 400.
   Платежі: `amount > 0`, `amount ≤ залишок` (finalTotal − Σ оплат); статус рахунку
   переглядається при кожному платежі (UNPAID/PARTIAL/PAID, І5).

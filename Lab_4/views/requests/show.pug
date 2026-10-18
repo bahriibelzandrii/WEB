@@ -195,7 +195,7 @@ block content
       p.empty-text Запчастини ще не додані
 
   +section("Оцінка")
-    if r.estimate
+    if r.estimate && r.estimate.status !== "REJECTED"
       .badges
         .badge= estimateStatusLabels[r.estimate.status]
       p

@@ -24,7 +24,13 @@ export function createApp() {
 
  app.set("view engine", "pug");
  app.set("views", path.join(root, "views"));
- app.use(express.static(path.join(root, "public")));
+app.use(
+  express.static(path.join(root, "public"), {
+    setHeaders: (res) => {
+      res.setHeader("Cache-Control", "no-cache");
+    },
+  })
+);
  const uploadsDir = path.join(root, "uploads");
  fs.mkdirSync(uploadsDir, { recursive: true });
  app.use("/uploads", express.static(uploadsDir));

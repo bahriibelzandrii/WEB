@@ -1041,7 +1041,7 @@ export async function approveEstimate(req: Request, res: Response) {
   res.redirect(`/requests/${id}`);
 }
 
-/** POST /requests/:id/estimate/reject — відхилити оцінку (→ REJECTED). */
+/** POST /requests/:id/estimate/reject — відхилити оцінку: оцінку з заявки видаляють. */
 export async function rejectEstimate(req: Request, res: Response) {
   const id = String(req.params.id ?? "");
   const data = await showData(id);
@@ -1055,15 +1055,12 @@ export async function rejectEstimate(req: Request, res: Response) {
     renderShow(res, data, { errors: ["Оцінки ще немає — оформіть її спершу"] });
     return;
   }
-  if (est.status === "REJECTED") {
+  if (data.r.invoice) {
     res.status(400);
-    renderShow(res, data, { errors: ["Оцінку вже відхилено"] });
+    renderShow(res, data, { errors: ["З оцінки вже видано рахунок — відхилити її не можна"] });
     return;
   }
-  await prisma.estimate.update({
-    where: { id: est.id },
-    data: { status: "REJECTED", approvedAt: null },
-  });
+  await prisma.estimate.delete({ where: { id: est.id } });
   res.redirect(`/requests/${id}`);
 }
 
